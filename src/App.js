@@ -14,14 +14,36 @@ function stringToThreeColor(colorStr) {
 
 const gui = new dat.GUI();
 
-function alignPlaneGeometryToPlane(plane, planeGeometry) {
-  // Takes a THREE.Plane and a THREE.PlaneGeometry as input. 
-  // aligns the PlaneGeometry to the state of the Plane 
-  let coplanarPoint = plane.coplanarPoint();
-  let focalPoint = new THREE.Vector3().copy(coplanarPoint).add(plane.normal);
-  planeGeometry.lookAt(focalPoint);
-  planeGeometry.translate(coplanarPoint.x, coplanarPoint.y, coplanarPoint.z);
-};
+// function ensurePlaneContainsPoints(raycaster, points, planemesh, radDelta=(Math.PI*2/720)) {
+//   for (let point of points) {
+
+//   }
+// }
+
+function Circle(radius,  
+                pos=new THREE.Vector3(0,0,0), 
+                caxis=new THREE.Vector3(0,0,1), 
+                raxis=new THREE.Vector3(1,0,0)) {
+  let circle = {}; 
+  circle.tracer = new THREE.Vector3(); 
+  circle.geometry = new THREE.CircleGeometry( radius, 30 ); 
+  circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
+  circle.pos = function(radians) {
+    this.tracer.copy(raxis); 
+    this.tracer.applyAxisAngle(caxis, radians); 
+    this.tracer.multiplyScalar(radius); 
+    this.tracer.add(pos); 
+    return (new THREE.Vector3()).copy(this.tracer);  
+  };
+  circle.render = function(scene) {
+    let { geometry, material } = this;
+    let mesh = new THREE.Mesh( geometry, material );
+    let { x, y, z } = pos; 
+    mesh.position.set(x, y, z); 
+    scene.add(mesh); 
+  }; 
+  return circle; 
+}; 
 
 function App() {
 
@@ -70,23 +92,37 @@ function App() {
       this.cameraStartPos = new THREE.Vector3(0, 0, 0); 
 
       // Animation settings 
-      this.cameraStepPerFrame = 1;              // controls the speed of the camera during animation
+      this.cameraStepPerFrame = 1;                                // controls the speed of the camera during animation
+      this.rotate = false; 
+      this.glide = false; 
+      this.forward = true; 
+      this.rotateStep = Math.PI / 180; 
 
       // Spatial / Geometric settings 
-      this.planeWidth = 2;                                        // width of planes used in animation 
       this.planeHeight = 4;                                       // height of planes used in animation 
       this.numAngularSteps = 12;                                  // number of angular steps at which a stream of objects is rendered
-      this.numObjectsPerAngle = 1000;                             // at each angular step, we render this many objects 
+      this.numObjectsPerAngle = 1;                                // at each angular step, we render this many objects 
       this.angularStep = Math.PI * 2 / this.numAngularSteps;      // the angular stepping distance for object rendering
       this.radius = 5;                                            // the radius of the tunnel 
-      this.dilationFactor = .1;                                   // the factor which controls dilation of circles used to determine planar angles 
+      this.lensAngularStep = this.angularStep / 3.5;                 
+                                
       this.rotations = {};                                        // the rotations to apply streamwise at each angular step 
       this.angularOffset = 0;                                     // the angle from which we start stepping around the circle 
-      this.angularIndicesToRender = _.range(0, objectsPerPeriod); // if the element i is in this array, render objects at the ith angular step 
-      this.planeSet = {};                                         // the set of objects rendered at the ith angular step mapped by index 
-      this.uniformZSpacing = 20;                                  // distance between objects rendered within a single stream 
-      this.getFocalDilationBack = () => 1 + this.dilationFactor; 
-      this.getFocalDilationFront = () => 1 - this.dilationFactor; 
+      this.angularIndicesToRender = null;                         // if the element i is in this array, render objects at the ith angular step 
+      this.planeSet = null;                                       // the set of objects rendered at the ith angular step mapped by index 
+      this.uniformZSpacing = 10;                                  // distance between objects rendered within a single stream 
+      
+      this.lensWidthFar = this.planeHeight / 2; 
+      this.lensWidthNear = this.lensWidthFar * .75; 
+      this.focalDilationFrontFar = 1; 
+      this.focalDilationFrontNear = .9; 
+
+      // Initialize with values 
+      this.angularIndicesToRender = _.range(0, this.numAngularSteps); 
+      this.planeSet = _.range(0, this.numAngularSteps).reduce((acc, curr) => {
+        acc[curr] = []; 
+        return acc; 
+      }, {}); 
 
       // Boilerplate setup 
       let scene = new THREE.Scene();
@@ -95,6 +131,12 @@ function App() {
       let renderer = new THREE.WebGLRenderer();
       renderer.setSize( window.innerWidth, window.innerHeight );
       document.body.appendChild( renderer.domElement );
+
+      this.clearScene = function() {
+        while (scene.children.length > 0) { 
+          scene.remove(scene.children[0]); 
+        }
+      }
       
       // this.rotations[0] = { x: 1.34, y: .45, z: .45 };     //left 
       // this.rotations[1] = { x: 1.34, y: .9, z: .45 };
@@ -112,95 +154,262 @@ function App() {
       // this.rotations[10] = { x: 1.2, y: 2.8, z: 6.06 };   
       // this.rotations[11] = { x: 1.2, y: 3.14, z: 5.78 };
 
-      // let controls = new OrbitControls( camera, renderer.domElement );
-      // controls.enabled = true;
-  
-      // let cgeometrybig = new THREE.CircleGeometry( r * this.focalDilationBack, 30 );
-      // let cgeometrysmall = new THREE.CircleGeometry( r * this.focalDilationFront, 30 );
-      // let cmaterial = new THREE.MeshBasicMaterial( { color: 0xffff00, side: THREE.DoubleSide } );
-      // this.circlebig = new THREE.Mesh( cgeometrybig, cmaterial );
-      // this.circlesmall = new THREE.Mesh( cgeometrysmall, cmaterial ); 
-      // this.circlebig.position.set(0, 0, -this.focalZ);
-      // this.circlesmall.position.set(0, 0, this.focalZ);
-      // this.circlex = 0; 
-      // this.circley = 0; 
-      // this.circlez = 0; 
-      // this.circler = 0; 
-      // scene.add(this.circlebig);
-      // scene.add(this.circlesmall); 
+      let controls = new OrbitControls( camera, renderer.domElement );
+      controls.enabled = true;
 
-      let geometry = new THREE.PlaneGeometry( planeWidth, planeHeight, 1 );
+      // let geometry = new THREE.PlaneGeometry( this.planeWidth, this.planeHeight, 1 );
       let globals = '#define NUMCOLORS ' + colors.length +'\n'; 
       let vertexShader = globals + document.getElementById('vertexShader').textContent;
       let cyclingDiscreteGradientShader = globals + document.getElementById('fragment_shader').textContent; 
-      let material = new THREE.ShaderMaterial({ 
+      let cyclingGradientMaterial = new THREE.ShaderMaterial({ 
         uniforms, 
         vertexShader, 
         fragmentShader: cyclingDiscreteGradientShader,
         side: THREE.DoubleSide
       });
 
-      let planesetter = new THREE.Plane(); 
-      for (let i = 0; i < objectsPerPeriod; i++) {
-        let x = Math.cos(dt * i) * r; 
-        let y = Math.sin(dt * i) * r; 
-        let ri = this.rotations[i]; 
-        this.planeSet[i] = []; 
-        let distep = 0;
-        if (this.renderplanes.includes(i)) { 
-          for (let j = 0; j < numObjects; j++) {
-            let z = this.uniformZSpacing * j + distep; 
-            let plane = new THREE.Mesh(geometry, material); 
-            if (j === 0) {
-              planesetter.setFromCoplanarPoints(
-                new THREE.Vector3(x, y, z), 
-                new THREE.Vector3(...refPos), 
-                new THREE.Vector3(x * this.focalDilation, y * this.focalDilation, z + this.focalZ)
-              ); 
-              alignPlaneGeometryToPlane(planesetter, plane); 
-              this.rotations[i] = { 
-                x: plane.rotation.x,
-                y: plane.rotation.y, 
-                z: plane.rotation.z
-              }; 
+      this.renderObjects = () => {
+
+        let initPos = new THREE.Vector3(0,0,0); 
+        let nPos = new THREE.Vector3(); 
+        let fPos = new THREE.Vector3(); 
+        let cNear = new Circle(this.radius * this.focalDilationFrontNear,
+                               nPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthNear))); 
+        let cMiddle = new Circle(this.radius, initPos); 
+        let cFar = new Circle(this.radius * this.focalDilationFrontFar,
+                              fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
+        cNear.render(scene); 
+        cFar.render(scene); 
+        var sphereGeometry = new THREE.SphereGeometry( .05, 32, 32 );
+        let sphereMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+        let sphereMaterial2 = new THREE.MeshBasicMaterial( { color: 0xff00ff } );
+  
+        let planesetter = new THREE.Plane(); 
+        for (let i = 0; i < this.numAngularSteps; i++) {
+          let rad = (this.angularStep * i) + this.angularOffset; 
+          let pos = cMiddle.pos(rad); 
+          let x = pos.x; 
+          let y = pos.y; 
+          let ri = this.rotations[i]; 
+          let planeGeometry = null; 
+          let plane = null; 
+          let center = null; 
+          let endVertices = null; 
+          if (i === 1) break; 
+          if (this.angularIndicesToRender.includes(i)) { 
+            for (let j = 0; j < this.numObjectsPerAngle; j++) {
+              let z = this.uniformZSpacing * j; 
+              if (j === 0) {
+  
+                let p1m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p2m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p3m = new THREE.Mesh( sphereGeometry, sphereMaterial );
+                let p4m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p5m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p6m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+
+                let p1 = cNear.pos(rad - this.lensAngularStep); 
+                let p2 = cMiddle.pos(rad); 
+                let p3 = cFar.pos(rad + this.lensAngularStep); 
+
+                let planeWidth = p1.distanceTo(p3); 
+
+                planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 1 ); 
+                plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
+
+                debugger; 
+                
+                p1m.position.set(p1.x, p1.y, p1.z); 
+                p2m.position.set(p2.x, p2.y, p2.z); 
+                p3m.position.set(p3.x, p3.y, p3.z); 
+                scene.add(p1m); 
+                scene.add(p3m); 
+  
+                planesetter.setFromCoplanarPoints(p1, p2, p3); 
+
+                // let coplanarPoint = planesetter.coplanarPoint(new THREE.Vector3());
+                // let focalPoint = new THREE.Vector3().copy(coplanarPoint).add(planesetter.normal);
+                // plane.lookAt(focalPoint); 
+                // plane.position.set(coplanarPoint.x, coplanarPoint.y, coplanarPoint.z); 
+
+                let oneToThreeDir = (new THREE.Vector3()).subVectors(p3, p1).normalize();
+                let planeNorm = planesetter.normal; 
+                let cross = (new THREE.Vector3()).crossVectors(oneToThreeDir, planeNorm).normalize(); 
+                if (cross.z > 0) {
+                  cross.negate();
+                }
+                let crossScaled = (new THREE.Vector3()).copy(cross).multiplyScalar(this.planeHeight); 
+                let crossScaledHalf = (new THREE.Vector3()).copy(crossScaled).multiplyScalar(.5); 
+                let midpoint = (new THREE.Vector3()).lerpVectors(p1, p3, .5); 
+                center = (new THREE.Vector3()).addVectors(midpoint, crossScaledHalf); 
+                let p4pos = (new THREE.Vector3()).addVectors(p3, crossScaled); 
+                let p5pos = (new THREE.Vector3()).addVectors(p1, crossScaled); 
+                p4m.position.set(p4pos.x, p4pos.y, p4pos.z); 
+                p5m.position.set(p5pos.x, p5pos.y, p5pos.z); 
+                p6m.position.set(center.x, center.y, center.z); 
+                scene.add(p4m); 
+                scene.add(p5m); 
+                scene.add(p6m);
+
+                endVertices = [p1, p3, p4pos, p5pos];
+
+                ri = { 
+                  x: plane.rotation.x,
+                  y: plane.rotation.y, 
+                  z: plane.rotation.z
+                }; 
+
+              }
+
+              // let position = (new THREE.Vector3()).copy(plane.position); 
+              // let translation = (new THREE.Vector3()).subVectors(position, center).negate(); 
+              // position.add(translation); 
+              // plane.position.copy(position); 
+              // debugger; 
+              
+              // let startVertices = []
+              // for (let v of plane.geometry.vertices) {
+              //   let avec = (new THREE.Vector3()).copy(v); 
+              //   avec.applyQuaternion(plane.quaternion); 
+              //   avec.add(plane.position); 
+                
+              //   startVertices.push(avec);
+              // } 
+
+              // perform rotational transform from 
+
+              // console.log(startVertices); 
+              // console.log(endVertices);
+  
+              // let startInd = 0;
+              // let endInd = 3;
+              // let a = new THREE.Vector3(); 
+              // let b = new THREE.Vector3(); 
+              // a.subVectors(startVertices[startInd], center); 
+              // b.subVectors(endVertices[endInd], center);
+              // let planarTheta = Math.acos(a.dot(b) / (a.length() * b.length())); 
+              // let oldPos = (new THREE.Vector3()).copy(plane.position); 
+
+              // Plane starts at [0,0,0] facing [0,0,1]
+
+              // rotate so we are orthogonal to the target planar surface 
+              let q1 = new THREE.Quaternion(); 
+              let q2 = new THREE.Quaternion(); 
+              let qFull = new THREE.Quaternion();
+              q1.setFromUnitVectors(new THREE.Vector3(0, 0, 1), planesetter.normal); 
+              q2.setFromAxisAngle(planesetter.normal, 0); 
+              qFull.multiplyQuaternions(q2, q1); 
+
+              // translate the plane onto the target plan surface 
+              let centerProj = new THREE.Vector3(); 
+              let ori = new THREE.Vector3(0,0,0);
+              planesetter.projectPoint(ori, centerProj);
+              let centerToCenterProj = new THREE.Vector3(); 
+              centerToCenterProj.subVectors(centerProj, ori); 
+
+              // translate from centerProj to the desired center point 
+              let toFinalCentroid = new THREE.Vector3(); 
+              toFinalCentroid.subVectors(center, centerProj); 
+
+              plane.matrixAutoUpdate = false; 
+              let mat4 = new THREE.Matrix4(); 
+              plane.matrix.multiply(mat4.makeTranslation(toFinalCentroid.x, toFinalCentroid.y, toFinalCentroid.z));
+              plane.matrix.multiply(mat4.makeTranslation(centerToCenterProj.x, centerToCenterProj.y, centerToCenterProj.z));
+              plane.matrix.multiply(mat4.makeRotationFromQuaternion(qFull));
+
+              // from top right corner of initial plane, we map to endVertices[2]
+              let ind = 1; 
+              let startVertex = (new THREE.Vector3()).copy(plane.geometry.vertices[ind]); 
+              startVertex.applyMatrix4(plane.matrix); 
+              let endVertex = endVertices[ind]; 
+
+              // console.log(plane.geometry.vertices); 
+              // debugger;
+              // plane.updateMatrix(); 
+              
+              // let projCentroid = new THREE.Vector3(0, 0, 0); 
+              // projCentroid.trans
+              // plane.position.
+
+              // plane.rotateOnWorldAxis(planesetter.normal, 0); 
+
+              // let projPoints = []; 
+              // let dist = null; 
+              // for (let v of plane.geometry.vertices) {
+              //   let vcopy = (new THREE.Vector3()).copy(v); 
+              //   let vcopyProj = new THREE.Vector3(); 
+              //   vcopy.applyQuaternion(q); 
+              //   projPoints.push(vcopyProj); 
+              //   planesetter.projectPoint(vcopy, vcopyProj); 
+              //   dist = vcopy.distanceTo(vcopyProj); 
+              //   let p = new THREE.Mesh( sphereGeometry, sphereMaterial2 );
+              //   let { x, y, z } = vcopyProj; 
+              //   p.position.set(x, y, z); 
+              //   scene.add(p);
+              // }
+
+              // plane.translateOnAxis(planesetter.normal, dist); 
+
+              // let startind = 0; 
+              // let endind = 3; 
+
+              scene.add(plane); 
+
+              // let ahelper = new THREE.ArrowHelper(planesetter.normal, new THREE.Vector3(0,0,0), 4, 0xff0000);
+              // scene.add(ahelper); 
+
+              // var quaternion = new THREE.Quaternion(); // create one and reuse it
+              // quaternion.setFromUnitVectors(svec, evec); 
+              // plane.applyQuaternion(quaternion); 
+
+              // let src = new THREE.Vector3( x, y, z );
+              // let dest = new THREE.Vector3(...refPos); 
+              // let length = 1000;
+              // let hex = 0xffff00;
+              // let dir = new THREE.Vector3(); 
+              // dir.copy(dest); 
+              // dir.sub(src); 
+              // dir.normalize(); 
+              let arrowHelper = new THREE.ArrowHelper( startVertex.normalize(), ori, 7, 0x00ff00 );
+              let arrowHelper2 = new THREE.ArrowHelper( endVertex.normalize(), ori, 7, 0x00ff00 );
+
+              scene.add(arrowHelper);
+              scene.add(arrowHelper2); 
+
+              let phelper = new THREE.PlaneHelper(planesetter, 10, 0x00ff00); 
+              scene.add(phelper); 
+  
+              this.planeSet[i].push(plane); 
+              break; 
             }
-            scene.add(plane); 
-            plane.position.set(x, y, z); 
-            plane.rotation.set(ri.x, ri.y, ri.z, 'XYZ'); 
+          }; 
 
-            // let src = new THREE.Vector3( x, y, z );
-            // let dest = new THREE.Vector3(...refPos); 
-            // let length = 1000;
-            // let hex = 0xffff00;
-            // let dir = new THREE.Vector3(); 
-            // dir.copy(dest); 
-            // dir.sub(src); 
-            // dir.normalize(); 
-            // let arrowHelper = new THREE.ArrowHelper( dir, src, length, hex );
-            // scene.add(arrowHelper);
-
-            this.planeSet[i].push(plane); 
-          }
-        }; 
-        
+          // var axesHelper = new THREE.AxesHelper( 5 );
+          // scene.add( axesHelper );
+          
+        }
       }
 
-      let self = this; 
+      this.rerender = false; 
   
       // Set the initial position of the camera 
-      camera.position.set(...startPos);
-      camera.lookAt(startPos[0], startPos[1], startPos[2] + 1);     
+      let cameraX = this.cameraStartPos.x; 
+      let cameraY = this.cameraStartPos.y; 
+      let cameraZ = this.cameraStartPos.z; 
 
-      this.rotate = false; 
-      this.glide = false; 
-      this.forward = true; 
-      this.rotateStep = Math.PI / 180; 
+      camera.position.set(cameraX, cameraY, -20);
+      camera.lookAt(cameraX, cameraY, cameraZ + 1);     
   
       let animate = () => {
         requestAnimationFrame( animate );
         uniforms.time.value += clock.getDelta(); 
+        if (this.rerender) {
+          this.rerender = false; 
+          this.clearScene(); 
+          this.renderObjects(); 
+        }
         if (this.farClipDistance !== camera.far) {
-          camera.far = self.farClipDistance; 
+          camera.far = this.farClipDistance; 
           camera.updateProjectionMatrix();
         }
         if (this.glide) {
@@ -214,45 +423,56 @@ function App() {
         controls.update();
         renderer.render( scene, camera );
       }
+
+      this.renderObjects(); 
+
       animate();
 
     }
 
     let trippy = new Trippy();   
 
-    let changeZSpacing = () => {
-
+    let fullReRender = () => {
+      trippy.clearScene(); 
+      trippy.renderObjects();
     }
     
+
     gui.add(trippy, 'farClipDistance', 100, 1000).step(10);
     gui.add(trippy, 'cameraStepPerFrame', 0, 10).step(.05);  
     gui.add(trippy, 'rotate'); 
     gui.add(trippy, 'glide'); 
-    gui.add(trippy, 'forward'); 
-    let zSpacingController = gui.add(trippy, 'zSpacing'); 
-    zSpacingController.onChange(changeZSpacing); 
+    gui.add(trippy, 'forward');
+    gui.add(trippy, 'rerender');  
 
-    function addPlaneSetOrientationSetters() {
-      for (let i = 0; i < objectsPerPeriod; i++) {
-        let folder = gui.addFolder(`plane field ${i}`); 
-        let c1 = folder.add(trippy.rotations[i], 'x', 0, Math.PI * 2).step(.02); 
-        let c2 = folder.add(trippy.rotations[i], 'y', 0, Math.PI * 2).step(.02); 
-        let c3 = folder.add(trippy.rotations[i], 'z', 0, Math.PI * 2).step(.02); 
-        let change = () => {
-          let { x, y, z } = trippy.rotations[i];
-          if (trippy.renderplanes.includes(i)) { 
-            for (let j = 0; j < trippy.planeSet[i].length; j++) {
-              let plane = trippy.planeSet[i][j]; 
-              plane.rotation.set(x, y, z, 'XYZ');
-            }
-          }; 
-        };
-        c1.onChange(change);  
-        c2.onChange(change);  
-        c3.onChange(change);  
-      }
-    }
+    let c2 = gui.add(trippy, 'lensWidthFar', 0, 10).step(.1);
+    let c3 = gui.add(trippy, 'lensWidthNear', 0, 10).step(.1);
+    let c4 = gui.add(trippy, 'focalDilationFrontNear', .01, 1); 
+    let c5 = gui.add(trippy, 'focalDilationFrontFar', .01, 1); 
+    let c6 = gui.add(trippy, 'lensAngularStep', 0, Math.PI * 2).step(Math.PI * 2 / 100);
 
+    for (let c of [c2, c3, c4, c5, c6]) c.onChange(fullReRender); 
+
+    // function addPlaneSetOrientationSetters() {
+    //   for (let i = 0; i < this.numObjectsPerAngle; i++) {
+    //     let folder = gui.addFolder(`plane field ${i}`); 
+    //     let c1 = folder.add(trippy.rotations[i], 'x', 0, Math.PI * 2).step(.02); 
+    //     let c2 = folder.add(trippy.rotations[i], 'y', 0, Math.PI * 2).step(.02); 
+    //     let c3 = folder.add(trippy.rotations[i], 'z', 0, Math.PI * 2).step(.02); 
+    //     let change = () => {
+    //       let { x, y, z } = trippy.rotations[i];
+    //       if (trippy.renderplanes.includes(i)) { 
+    //         for (let j = 0; j < trippy.planeSet[i].length; j++) {
+    //           let plane = trippy.planeSet[i][j]; 
+    //           plane.rotation.set(x, y, z, 'XYZ');
+    //         }
+    //       }; 
+    //     };
+    //     c1.onChange(change);  
+    //     c2.onChange(change);  
+    //     c3.onChange(change);  
+    //   }
+    // }
 
   }, []);
 
