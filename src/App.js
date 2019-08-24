@@ -12,6 +12,20 @@ function stringToThreeColor(colorStr) {
   return new THREE.Vector3(r, g, b); 
 }
 
+const coolConfigurations = {
+
+  'rotatingSplitColorBleed': {
+    // Zoom in real close with the camera for this one 
+    lensWidthFar: 7.4, 
+    lensWidthNear: 2.2, 
+    focalDilationFrontNear: .64, 
+    focalDilationFrontFar: .5, 
+    lensAngularStep: 3.58
+  }
+  
+};
+
+
 const gui = new dat.GUI();
 
 // function ensurePlaneContainsPoints(raycaster, points, planemesh, radDelta=(Math.PI*2/720)) {
@@ -101,7 +115,7 @@ function App() {
       // Spatial / Geometric settings 
       this.planeHeight = 4;                                       // height of planes used in animation 
       this.numAngularSteps = 12;                                  // number of angular steps at which a stream of objects is rendered
-      this.numObjectsPerAngle = 1000;                             // at each angular step, we render this many objects 
+      this.numObjectsPerAngle = 1;                                // at each angular step, we render this many objects 
       this.angularStep = Math.PI * 2 / this.numAngularSteps;      // the angular stepping distance for object rendering
       this.radius = 7;                                            // the radius of the tunnel 
       this.lensAngularStep = this.angularStep / 3.5;                 
@@ -154,8 +168,8 @@ function App() {
       // this.rotations[10] = { x: 1.2, y: 2.8, z: 6.06 };   
       // this.rotations[11] = { x: 1.2, y: 3.14, z: 5.78 };
 
-      // let controls = new OrbitControls( camera, renderer.domElement );
-      // controls.enabled = true;
+      let controls = new OrbitControls( camera, renderer.domElement );
+      controls.enabled = true;
 
       // let geometry = new THREE.PlaneGeometry( this.planeWidth, this.planeHeight, 1 );
       let globals = '#define NUMCOLORS ' + colors.length +'\n'; 
@@ -178,10 +192,12 @@ function App() {
         let cMiddle = new Circle(this.radius, initPos); 
         let cFar = new Circle(this.radius * this.focalDilationFrontFar,
                               fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
-        // cNear.render(scene); 
+
+        cNear.render(scene); 
         // cFar.render(scene); 
-        // var sphereGeometry = new THREE.SphereGeometry( .05, 32, 32 );
-        // let sphereMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+
+        var sphereGeometry = new THREE.SphereGeometry( .05, 32, 32 );
+        let sphereMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
   
         let planesetter = new THREE.Plane(); 
         for (let i = 0; i < this.numAngularSteps; i++) {
@@ -202,12 +218,12 @@ function App() {
               
               if (j === 0) {
   
-                // let p1m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                // let p2m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                // let p3m = new THREE.Mesh( sphereGeometry, sphereMaterial );
-                // let p4m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                // let p5m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                // let p6m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p1m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p2m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p3m = new THREE.Mesh( sphereGeometry, sphereMaterial );
+                let p4m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p5m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+                let p6m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
 
                 let p1 = cNear.pos(rad - this.lensAngularStep); 
                 let p2 = cMiddle.pos(rad); 
@@ -218,11 +234,11 @@ function App() {
                 planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 1 ); 
                 let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
                 
-                // p1m.position.set(p1.x, p1.y, p1.z); 
-                // p2m.position.set(p2.x, p2.y, p2.z); 
-                // p3m.position.set(p3.x, p3.y, p3.z); 
-                // scene.add(p1m); 
-                // scene.add(p3m); 
+                p1m.position.set(p1.x, p1.y, p1.z); 
+                p2m.position.set(p2.x, p2.y, p2.z); 
+                p3m.position.set(p3.x, p3.y, p3.z); 
+                scene.add(p1m); 
+                scene.add(p3m); 
   
                 planesetter.setFromCoplanarPoints(p1, p2, p3); 
 
@@ -243,12 +259,12 @@ function App() {
                 center = (new THREE.Vector3()).addVectors(midpoint, crossScaledHalf); 
                 let p4pos = (new THREE.Vector3()).addVectors(p3, crossScaled); 
                 let p5pos = (new THREE.Vector3()).addVectors(p1, crossScaled); 
-                // p4m.position.set(p4pos.x, p4pos.y, p4pos.z); 
-                // p5m.position.set(p5pos.x, p5pos.y, p5pos.z); 
-                // p6m.position.set(center.x, center.y, center.z); 
-                // scene.add(p4m); 
-                // scene.add(p5m); 
-                // scene.add(p6m);
+                p4m.position.set(p4pos.x, p4pos.y, p4pos.z); 
+                p5m.position.set(p5pos.x, p5pos.y, p5pos.z); 
+                p6m.position.set(center.x, center.y, center.z); 
+                scene.add(p4m); 
+                scene.add(p5m); 
+                scene.add(p6m);
 
                 endVertices = [p1, p3, p4pos, p5pos];
 
@@ -299,8 +315,8 @@ function App() {
                   sind = 1; 
                   eind = 1; 
                 } else {
-                  sind = 1; 
-                  eind = 3; 
+                  sind = 0; 
+                  eind = 2; 
                 }
                 let startVertex = (new THREE.Vector3()).copy(plane.geometry.vertices[sind]); 
                 startVertex.applyMatrix4(intoPlane4); 
@@ -329,7 +345,6 @@ function App() {
                 this.transforms[i].multiply(mat4.makeTranslation(toFinalCentroid.x, toFinalCentroid.y, toFinalCentroid.z));
                 this.transforms[i].multiply(mat4.makeTranslation(centerToCenterProj.x, centerToCenterProj.y, centerToCenterProj.z));
                 this.transforms[i].multiply(mat4.makeRotationFromQuaternion(qFull)); 
-
 
               }
 
@@ -417,7 +432,7 @@ function App() {
           let { x, y, z } = rotation; 
           camera.rotation.set(x, y, z + this.rotateStep); 
         }
-        // controls.update();
+        controls.update();
         renderer.render( scene, camera );
       }
 
