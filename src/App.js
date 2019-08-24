@@ -115,7 +115,7 @@ function App() {
       // Spatial / Geometric settings 
       this.planeHeight = 4;                                       // height of planes used in animation 
       this.numAngularSteps = 12;                                  // number of angular steps at which a stream of objects is rendered
-      this.numObjectsPerAngle = 1;                                // at each angular step, we render this many objects 
+      this.numObjectsPerAngle = 1000;                                // at each angular step, we render this many objects 
       this.angularStep = Math.PI * 2 / this.numAngularSteps;      // the angular stepping distance for object rendering
       this.radius = 7;                                            // the radius of the tunnel 
       this.lensAngularStep = this.angularStep / 3.5;                 
@@ -168,8 +168,8 @@ function App() {
       // this.rotations[10] = { x: 1.2, y: 2.8, z: 6.06 };   
       // this.rotations[11] = { x: 1.2, y: 3.14, z: 5.78 };
 
-      let controls = new OrbitControls( camera, renderer.domElement );
-      controls.enabled = true;
+      // let controls = new OrbitControls( camera, renderer.domElement );
+      // controls.enabled = true;
 
       // let geometry = new THREE.PlaneGeometry( this.planeWidth, this.planeHeight, 1 );
       let globals = '#define NUMCOLORS ' + colors.length +'\n'; 
@@ -193,18 +193,11 @@ function App() {
         let cFar = new Circle(this.radius * this.focalDilationFrontFar,
                               fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
 
-        cNear.render(scene); 
-        // cFar.render(scene); 
-
-        var sphereGeometry = new THREE.SphereGeometry( .05, 32, 32 );
-        let sphereMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-  
-        let planesetter = new THREE.Plane(); 
+        let planeMath = new THREE.Plane(); 
         for (let i = 0; i < this.numAngularSteps; i++) {
 
           let rad = (this.angularStep * i) + this.angularOffset; 
           let planeGeometry = null; 
-          let center = null; 
           let endVertices = null; 
           let zMat4 = new THREE.Matrix4(); 
 
@@ -212,18 +205,12 @@ function App() {
             
             for (let j = 0; j < this.numObjectsPerAngle; j++) {
               
-              let z = this.uniformZSpacing * j; 
+              let z = j; 
 
+              zMat4.identity();
               zMat4.makeTranslation(0, 0, z); 
               
               if (j === 0) {
-  
-                let p1m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                let p2m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                let p3m = new THREE.Mesh( sphereGeometry, sphereMaterial );
-                let p4m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                let p5m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-                let p6m = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
 
                 let p1 = cNear.pos(rad - this.lensAngularStep); 
                 let p2 = cMiddle.pos(rad); 
@@ -234,21 +221,10 @@ function App() {
                 planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 1 ); 
                 let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
                 
-                p1m.position.set(p1.x, p1.y, p1.z); 
-                p2m.position.set(p2.x, p2.y, p2.z); 
-                p3m.position.set(p3.x, p3.y, p3.z); 
-                scene.add(p1m); 
-                scene.add(p3m); 
-  
-                planesetter.setFromCoplanarPoints(p1, p2, p3); 
-
-                // let coplanarPoint = planesetter.coplanarPoint(new THREE.Vector3());
-                // let focalPoint = new THREE.Vector3().copy(coplanarPoint).add(planesetter.normal);
-                // plane.lookAt(focalPoint); 
-                // plane.position.set(coplanarPoint.x, coplanarPoint.y, coplanarPoint.z); 
+                planeMath.setFromCoplanarPoints(p1, p2, p3); 
 
                 let oneToThreeDir = (new THREE.Vector3()).subVectors(p3, p1).normalize();
-                let planeNorm = planesetter.normal; 
+                let planeNorm = planeMath.normal; 
                 let cross = (new THREE.Vector3()).crossVectors(oneToThreeDir, planeNorm).normalize(); 
                 if (cross.z > 0) {
                   cross.negate();
@@ -256,148 +232,50 @@ function App() {
                 let crossScaled = (new THREE.Vector3()).copy(cross).multiplyScalar(this.planeHeight); 
                 let crossScaledHalf = (new THREE.Vector3()).copy(crossScaled).multiplyScalar(.5); 
                 let midpoint = (new THREE.Vector3()).lerpVectors(p1, p3, .5); 
-                center = (new THREE.Vector3()).addVectors(midpoint, crossScaledHalf); 
+                let center = (new THREE.Vector3()).addVectors(midpoint, crossScaledHalf); 
                 let p4pos = (new THREE.Vector3()).addVectors(p3, crossScaled); 
                 let p5pos = (new THREE.Vector3()).addVectors(p1, crossScaled); 
-                p4m.position.set(p4pos.x, p4pos.y, p4pos.z); 
-                p5m.position.set(p5pos.x, p5pos.y, p5pos.z); 
-                p6m.position.set(center.x, center.y, center.z); 
-                scene.add(p4m); 
-                scene.add(p5m); 
-                scene.add(p6m);
 
                 endVertices = [p1, p3, p4pos, p5pos];
 
-                // Plane starts at [0,0,0] facing [0,0,1]
+                let sind = 1; 
+                let eind = 1; 
 
-                let intoPlane4 = new THREE.Matrix4(); 
-                let stack4 = new THREE.Matrix4(); 
-                intoPlane4.identity(); 
-                stack4.identity(); 
-
-                // rotate so we are orthogonal to the target planar surface 
-                let q1 = new THREE.Quaternion(); 
-                let q2 = new THREE.Quaternion(); 
-                let qFull = new THREE.Quaternion();
-                q1.setFromUnitVectors(new THREE.Vector3(0, 0, 1), planesetter.normal); 
-                q2.setFromAxisAngle(planesetter.normal, 0); 
-                qFull.multiplyQuaternions(q2, q1); 
-
-                // translate the plane onto the target plan surface 
-                let centerProj = new THREE.Vector3(); 
-                let ori = new THREE.Vector3(0,0,0);
-                planesetter.projectPoint(ori, centerProj);
-                let centerToCenterProj = new THREE.Vector3(); 
-                centerToCenterProj.subVectors(centerProj, ori); 
-
-                // translate from centerProj to the desired center point 
-                let toFinalCentroid = new THREE.Vector3(); 
-                toFinalCentroid.subVectors(center, centerProj); 
-
+                let transform = new THREE.Matrix4(); 
                 let mat4 = new THREE.Matrix4(); 
 
-                intoPlane4.multiply(mat4.makeTranslation(toFinalCentroid.x, toFinalCentroid.y, toFinalCentroid.z));
-                intoPlane4.multiply(mat4.makeTranslation(centerToCenterProj.x, centerToCenterProj.y, centerToCenterProj.z));
-                intoPlane4.multiply(mat4.makeRotationFromQuaternion(qFull));
+                // q1 rotates plane so we are orthogonal to target planar surface 
+                let q1 = new THREE.Quaternion();
+                q1.setFromUnitVectors(new THREE.Vector3(0, 0, 1), planeMath.normal); 
 
-                // from top right corner of initial plane, we map to endVertices[2]
-                /*
-                for 12
+                // transform performs rotation, then translates to target center coordinate 
+                // we use this information to determine where the base geometry vertex ends up 
+                transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
+                transform.multiply(mat4.makeRotationFromQuaternion(q1)); 
 
-                0, 1, 2, 3, 11, 10: sind = 1, eind = 1
+                let q2 = new THREE.Quaternion(); 
+                let fromV = (new THREE.Vector3()).copy(plane.geometry.vertices[sind]).applyMatrix4(transform).sub(center); 
+                let toV = (new THREE.Vector3()).subVectors(endVertices[eind], center); 
+                q2.setFromUnitVectors(fromV.normalize(), toV.normalize()); 
 
-                4, 5, 6, 7, 8, 9: sind = 3, eind = 3
+                transform.identity(); 
+                transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
+                transform.multiply(mat4.makeRotationFromQuaternion(q1.premultiply(q2))); 
 
-                */ 
-                let sind = null; 
-                let eind = null; 
-                if ([0, 1, 2, 3, 11, 10].includes(i)) {
-                  sind = 1; 
-                  eind = 1; 
-                } else {
-                  sind = 0; 
-                  eind = 2; 
-                }
-                let startVertex = (new THREE.Vector3()).copy(plane.geometry.vertices[sind]); 
-                startVertex.applyMatrix4(intoPlane4); 
-                let endVertex = endVertices[eind]; 
-
-                let amat4 = new THREE.Matrix4();
-                amat4.identity(); 
-
-                amat4.multiply(mat4.makeTranslation(-center.x, -center.y, -center.z)); 
-                amat4.multiply(mat4.makeTranslation(toFinalCentroid.x, toFinalCentroid.y, toFinalCentroid.z));
-                amat4.multiply(mat4.makeTranslation(centerToCenterProj.x, centerToCenterProj.y, centerToCenterProj.z));
-                amat4.multiply(mat4.makeRotationFromQuaternion(qFull));
-              
-                let fromVec = (new THREE.Vector3()).copy(plane.geometry.vertices[sind]); 
-                let toVec = (new THREE.Vector3()); 
-                toVec.subVectors(endVertex, center); 
-                fromVec.applyMatrix4(amat4); 
-                let dTheta = Math.acos(fromVec.dot(toVec) / (fromVec.length() * toVec.length())); 
-
-                this.transforms[i] = new THREE.Matrix4(); 
-                this.transforms[i].identity(); 
-
-                this.transforms[i].multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
-                this.transforms[i].multiply(mat4.makeRotationAxis(planesetter.normal, dTheta)); 
-                this.transforms[i].multiply(mat4.makeTranslation(-center.x, -center.y, -center.z)); 
-                this.transforms[i].multiply(mat4.makeTranslation(toFinalCentroid.x, toFinalCentroid.y, toFinalCentroid.z));
-                this.transforms[i].multiply(mat4.makeTranslation(centerToCenterProj.x, centerToCenterProj.y, centerToCenterProj.z));
-                this.transforms[i].multiply(mat4.makeRotationFromQuaternion(qFull)); 
-
-              }
-
-              // let position = (new THREE.Vector3()).copy(plane.position); 
-              // let translation = (new THREE.Vector3()).subVectors(position, center).negate(); 
-              // position.add(translation); 
-              // plane.position.copy(position); 
-              // debugger; 
-              
-              // let startVertices = []
-              // for (let v of plane.geometry.vertices) {
-              //   let avec = (new THREE.Vector3()).copy(v); 
-              //   avec.applyQuaternion(plane.quaternion); 
-              //   avec.add(plane.position); 
+                this.transforms[i] = transform; 
                 
-              //   startVertices.push(avec);
-              // } 
-
-              // perform rotational transform from 
-
-              // console.log(startVertices); 
-              // console.log(endVertices);
-  
-              // let startInd = 0;
-              // let endInd = 3;
-              // let a = new THREE.Vector3(); 
-              // let b = new THREE.Vector3(); 
-              // a.subVectors(startVertices[startInd], center); 
-              // b.subVectors(endVertices[endInd], center);
-              // let planarTheta = Math.acos(a.dot(b) / (a.length() * b.length())); 
-              // let oldPos = (new THREE.Vector3()).copy(plane.position); 
-
+              }
+              
               let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
-              plane.matrixAutoUpdate = false; 
-              plane.matrix.multiply(this.transforms[i].premultiply(zMat4)); 
+              plane.applyMatrix(this.transforms[i].premultiply(zMat4)); 
               scene.add(plane); 
-
-              // let arrowHelper = new THREE.ArrowHelper( fromVec.normalize(), center, 7, 0x00ff00 );
-              // let arrowHelper2 = new THREE.ArrowHelper( toVec.normalize(), center, 7, 0x00ff00 );
-
-              // scene.add(arrowHelper);
-              // scene.add(arrowHelper2); 
-
-              // let phelper = new THREE.PlaneHelper(planesetter, 10, 0x00ff00); 
-              // scene.add(phelper); 
-  
               this.planeSet[i].push(plane); 
 
             }
           }; 
 
-          // var axesHelper = new THREE.AxesHelper( 5 );
-          // scene.add( axesHelper );
+          var axesHelper = new THREE.AxesHelper( 5 );
+          scene.add( axesHelper );
           
         }
       }
@@ -432,7 +310,7 @@ function App() {
           let { x, y, z } = rotation; 
           camera.rotation.set(x, y, z + this.rotateStep); 
         }
-        controls.update();
+        // controls.update();
         renderer.render( scene, camera );
       }
 
