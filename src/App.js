@@ -4,7 +4,6 @@ import * as THREE from 'three';
 import * as dat from 'dat.gui';
 
 import _ from "lodash"; 
-import logo from './logo.svg';
 import './App.css';
 
 function stringToThreeColor(colorStr) {
@@ -21,6 +20,22 @@ const coolConfigurations = {
     focalDilationFrontNear: .64, 
     focalDilationFrontFar: .5, 
     lensAngularStep: 3.58
+  }, 
+
+  'triangularPrismLeaves': {
+    lensWidthFar: 0, 
+    lensWidthNear: 1.6, 
+    focalDilationFrontNear: .94, 
+    focalDilationFrontFar: 1, 
+    lensAngularStep: .062
+  }, 
+
+  'geometricTunnel': {
+    lensWidthFar: 2, 
+    lensWidthNear: 7.5, 
+    focalDilationFrontNear: .77, 
+    focalDilationFrontFar: 1, 
+    lensAngularStep: .15
   }
   
 };
@@ -38,10 +53,13 @@ function Circle(radius,
                 pos=new THREE.Vector3(0,0,0), 
                 caxis=new THREE.Vector3(0,0,1), 
                 raxis=new THREE.Vector3(1,0,0)) {
+  
   let circle = {}; 
+
   circle.tracer = new THREE.Vector3(); 
   circle.geometry = new THREE.CircleGeometry( radius, 30 ); 
   circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
+  
   circle.pos = function(radians) {
     this.tracer.copy(raxis); 
     this.tracer.applyAxisAngle(caxis, radians); 
@@ -49,6 +67,7 @@ function Circle(radius,
     this.tracer.add(pos); 
     return (new THREE.Vector3()).copy(this.tracer);  
   };
+
   circle.render = function(scene) {
     let { geometry, material } = this;
     let mesh = new THREE.Mesh( geometry, material );
@@ -56,7 +75,9 @@ function Circle(radius,
     mesh.position.set(x, y, z); 
     scene.add(mesh); 
   }; 
+
   return circle; 
+
 }; 
 
 function App() {
@@ -113,11 +134,11 @@ function App() {
       this.rotateStep = Math.PI / 180; 
 
       // Spatial / Geometric settings 
-      this.planeHeight = 4;                                       // height of planes used in animation 
+      this.planeHeight = 3;                                       // height of planes used in animation 
       this.numAngularSteps = 12;                                  // number of angular steps at which a stream of objects is rendered
-      this.numObjectsPerAngle = 1000;                                // at each angular step, we render this many objects 
+      this.numObjectsPerAngle = 1;                                // at each angular step, we render this many objects 
       this.angularStep = Math.PI * 2 / this.numAngularSteps;      // the angular stepping distance for object rendering
-      this.radius = 7;                                            // the radius of the tunnel 
+      this.radius = 7;                                           // the radius of the tunnel 
       this.lensAngularStep = this.angularStep / 3.5;                 
                                 
       this.transforms = {};                                       // the matrix to apply streamwise at each angular step 
@@ -146,30 +167,18 @@ function App() {
       renderer.setSize( window.innerWidth, window.innerHeight );
       document.body.appendChild( renderer.domElement );
 
+      scene.add( new THREE.AmbientLight( 0x404040 ) );
+      let pointLight = new THREE.PointLight( 0xffffff, 1 );
+			camera.add( pointLight );
+
       this.clearScene = function() {
         while (scene.children.length > 0) { 
           scene.remove(scene.children[0]); 
         }
       }
       
-      // this.rotations[0] = { x: 1.34, y: .45, z: .45 };     //left 
-      // this.rotations[1] = { x: 1.34, y: .9, z: .45 };
-      // this.rotations[2] = { x: 2.18, y: 1.9, z: 5.88 }; 
-
-      // this.rotations[3] = { x: 2, y: 2.2, z: 0 };         // top
-      // this.rotations[4] = { x: 5.16, y: 3.42, z: 2.86 }; 
-      // this.rotations[5] = { x: 4.94, y: 3.08, z: 2.8 }; 
-
-      // this.rotations[6] = { x: 5.1, y: 5.64, z: 3.7 };    //right 
-      // this.rotations[7] = { x: 5.02, y: 5.3, z: 3.7 };
-      // this.rotations[8] = { x: 3.98, y: 1.36, z: 3.7 };
-      
-      // this.rotations[9] = { x: 1.14, y: 2.2, z: 0 };      // bottom     
-      // this.rotations[10] = { x: 1.2, y: 2.8, z: 6.06 };   
-      // this.rotations[11] = { x: 1.2, y: 3.14, z: 5.78 };
-
-      // let controls = new OrbitControls( camera, renderer.domElement );
-      // controls.enabled = true;
+      let controls = new OrbitControls( camera, renderer.domElement );
+      controls.enabled = true;
 
       // let geometry = new THREE.PlaneGeometry( this.planeWidth, this.planeHeight, 1 );
       let globals = '#define NUMCOLORS ' + colors.length +'\n'; 
@@ -218,9 +227,9 @@ function App() {
 
                 let planeWidth = p1.distanceTo(p3); 
 
-                planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 1 ); 
+                planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 30 ); 
                 let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
-                
+                // debugger;
                 planeMath.setFromCoplanarPoints(p1, p2, p3); 
 
                 let oneToThreeDir = (new THREE.Vector3()).subVectors(p3, p1).normalize();
@@ -244,22 +253,31 @@ function App() {
                 let transform = new THREE.Matrix4(); 
                 let mat4 = new THREE.Matrix4(); 
 
-                // q1 rotates plane so we are orthogonal to target planar surface 
                 let q1 = new THREE.Quaternion();
+                let q2 = new THREE.Quaternion(); 
+
+                // q1 rotates plane so we are orthogonal to target planar surface 
                 q1.setFromUnitVectors(new THREE.Vector3(0, 0, 1), planeMath.normal); 
 
-                // transform performs rotation, then translates to target center coordinate 
-                // we use this information to determine where the base geometry vertex ends up 
+                /*
+                1. rotate so we are orthogonal to the target planar surface 
+                2. translate so plane is centered on correct point 
+                */
                 transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
                 transform.multiply(mat4.makeRotationFromQuaternion(q1)); 
 
-                let q2 = new THREE.Quaternion(); 
-                let fromV = (new THREE.Vector3()).copy(plane.geometry.vertices[sind]).applyMatrix4(transform).sub(center); 
-                let toV = (new THREE.Vector3()).subVectors(endVertices[eind], center); 
-                q2.setFromUnitVectors(fromV.normalize(), toV.normalize()); 
+                q2.setFromUnitVectors(
+                  new THREE.Vector3()
+                    .copy(plane.geometry.vertices[sind])
+                    .applyMatrix4(transform)
+                    .sub(center)
+                    .normalize(), 
+                  new THREE.Vector3().subVectors(endVertices[eind], center)
+                    .normalize()
+                ); 
 
                 transform.identity(); 
-                transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
+                // transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
                 transform.multiply(mat4.makeRotationFromQuaternion(q1.premultiply(q2))); 
 
                 this.transforms[i] = transform; 
@@ -274,8 +292,8 @@ function App() {
             }
           }; 
 
-          var axesHelper = new THREE.AxesHelper( 5 );
-          scene.add( axesHelper );
+          // var axesHelper = new THREE.AxesHelper( 5 );
+          // scene.add( axesHelper );
           
         }
       }
@@ -287,7 +305,7 @@ function App() {
       let cameraY = this.cameraStartPos.y; 
       let cameraZ = this.cameraStartPos.z; 
 
-      camera.position.set(cameraX, cameraY, cameraZ);
+      camera.position.set(cameraX, cameraY, cameraZ - 12);
       camera.lookAt(cameraX, cameraY, cameraZ + 1);     
   
       let animate = () => {
@@ -310,7 +328,7 @@ function App() {
           let { x, y, z } = rotation; 
           camera.rotation.set(x, y, z + this.rotateStep); 
         }
-        // controls.update();
+        controls.update();
         renderer.render( scene, camera );
       }
 

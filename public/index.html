@@ -36,12 +36,20 @@
       void main()
       {
         vUv = uv; 
+        vec3 pos = position; 
+
+        // apply uv displacement based on distance from geometric centroid 
+        float parabolicDistortion = 1.0; 
+        vec2 uvCentroid = vec2(.5, .5); 
+        float d = distance(vec2(uv.x, uv.y), uvCentroid); 
+        pos = pos + normal * 1.0 / d * parabolicDistortion; 
+
         gl_Position = projectionMatrix * 
                       modelViewMatrix * 
-                      vec4( position, 1.0 );
+                      vec4( pos, 1.0 );
       }
     </script>
-    <script id="fragment_shader" type="x-shader/x-fragment">
+    <!-- <script id="fragment_shader" type="x-shader/x-fragment">
 
       // Cycling discretized rainbow gradient shader 
 
@@ -72,17 +80,42 @@
 
       }
       
-		</script>
+    </script> -->
+    
+    <script id="fragment_shader" type="x-shader/x-fragment">
+
+      // Cycling discretized rainbow gradient shader 
+
+      uniform float time; 
+      uniform float speed; 
+      uniform vec3 colors[NUMCOLORS]; 
+      varying vec2 vUv;
+
+			void main(void) {
+
+        // Compute modulus wrt time so we dont overflow when 
+        // the shader is run continuously for a long time 
+        float offset = mod(time * speed, float(NUMCOLORS)); 
+
+        float dGradient = 1.0 / float(NUMCOLORS);
+        float index = floor(vUv.y / dGradient + offset); 
+        int iindex = int(mod(index, float(NUMCOLORS))); 
+        vec3 color; 
+        for (int i = 0; i < NUMCOLORS; i++) {
+          if (i == iindex) {
+            color = colors[i]; 
+            break; 
+          }
+        }
+
+        
+
+        gl_FragColor = vec4( color, 1.0 );
+
+      }
+      
+    </script>
+    
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>
