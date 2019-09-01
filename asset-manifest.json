@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/TrippyGraphics/static/css/main.2cce8147.chunk.css",
+    "main.js": "/TrippyGraphics/static/js/main.c2f0d36a.chunk.js",
+    "main.js.map": "/TrippyGraphics/static/js/main.c2f0d36a.chunk.js.map",
+    "runtime~main.js": "/TrippyGraphics/static/js/runtime~main.e1bce69a.js",
+    "runtime~main.js.map": "/TrippyGraphics/static/js/runtime~main.e1bce69a.js.map",
+    "static/css/2.7a1db334.chunk.css": "/TrippyGraphics/static/css/2.7a1db334.chunk.css",
+    "static/js/2.fb63649b.chunk.js": "/TrippyGraphics/static/js/2.fb63649b.chunk.js",
+    "static/js/2.fb63649b.chunk.js.map": "/TrippyGraphics/static/js/2.fb63649b.chunk.js.map",
+    "index.html": "/TrippyGraphics/index.html",
+    "precache-manifest.1cb030cd30ebcd352e3ce867710aa58e.js": "/TrippyGraphics/precache-manifest.1cb030cd30ebcd352e3ce867710aa58e.js",
+    "service-worker.js": "/TrippyGraphics/service-worker.js",
+    "static/css/2.7a1db334.chunk.css.map": "/TrippyGraphics/static/css/2.7a1db334.chunk.css.map",
+    "static/css/main.2cce8147.chunk.css.map": "/TrippyGraphics/static/css/main.2cce8147.chunk.css.map"
+  }
+}
