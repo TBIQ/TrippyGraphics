@@ -55,6 +55,44 @@ const configs = {
 
         cameraPos: [0, 0, -5.8]
 
+    }, 
+
+    'four': {
+
+        rotate: true,
+        glide: false, 
+
+        radius: 1, 
+        lensWidthFar: 3.6, 
+        lensWidthNear: 3.6, 
+        focalDilationFrontNear: .43, 
+        focalDilationFrontFar: .8, 
+        lensAngularStep: .063, 
+        numAngularSteps: 24, 
+        planeHeight: 1.5, 
+        parabolicDistortion: .75,
+
+        cameraPos: [0, 0, -5.8]
+
+    },
+
+    'five': {
+
+        rotate: true,
+        glide: false, 
+
+        radius: 1, 
+        lensWidthFar: 4.3, 
+        lensWidthNear: 3.6, 
+        focalDilationFrontNear: .43, 
+        focalDilationFrontFar: 1, 
+        lensAngularStep: .063, 
+        numAngularSteps: 24, 
+        planeHeight: 8, 
+        parabolicDistortion: 1.25,
+
+        cameraPos: [0, 0, -5.8]
+
     }
 
 };
