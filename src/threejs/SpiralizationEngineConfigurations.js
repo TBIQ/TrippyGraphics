@@ -6,7 +6,8 @@ const configs = {
         lensWidthNear: 2.2, 
         focalDilationFrontNear: .64, 
         focalDilationFrontFar: .5, 
-        lensAngularStep: 3.58
+        lensAngularStep: 3.58 
+
     }, 
 
     'triangularPrismLeaves': {
@@ -14,7 +15,8 @@ const configs = {
         lensWidthNear: 1.6, 
         focalDilationFrontNear: .94, 
         focalDilationFrontFar: 1, 
-        lensAngularStep: .062
+        lensAngularStep: .062, 
+
     }, 
 
     'geometricTunnel': {
