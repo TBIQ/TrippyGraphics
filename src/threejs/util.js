@@ -10,7 +10,6 @@ export function threejsSetupBasics(container) {
     Setup scene, camera, and renderer. 
     Append the renderer to a specified container 
     */
-    // Boilerplate setup 
     let scene = new THREE.Scene();
     let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, .1, 1000 );
     let renderer = new THREE.WebGLRenderer();

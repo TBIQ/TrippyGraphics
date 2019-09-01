@@ -11,6 +11,11 @@ export default function SpiralizationEngine(container) {
 
     this.start = () => {
 
+      // Origin of the world coordinate system 
+      let origin = new THREE.Vector3(0, 0, 0); 
+
+      // Colors have array representation for iteration and 
+      // object index mapping representation for control via dat.gui 
       this.colorsArr = [
         // Material design palette 
         // https://www.materialpalette.com/colors
@@ -36,62 +41,67 @@ export default function SpiralizationEngine(container) {
         return acc; 
       }, {}); 
 
-      let setLensAngularStep = () => {
-        this.lensAngularStep = this.angularStep / this.angularStepFactor;
-      };
+      this.setCameraStateToDefaults = (camera) => {
 
-      let setAngularStep = () => {
-        this.angularStep = Math.PI * 2 / this.numAngularSteps; 
-      };
+        this.nearClipDistance = .1; 
+        this.farClipDistance = 400; 
+        this.fovDegrees = 40; 
 
-      this.recomputeDerivedProperties = () => {
-        setLensAngularStep(); 
-        setAngularStep();
+        camera.fov = this.fovDegrees;
+        camera.aspect = window.innerWidth / window.innerHeight; 
+        camera.near = this.nearClipDistance; 
+        camera.far = this.farClipDistance; 
+        
+        // Must be called after any change to the camera parameters 
+        camera.updateProjectionMatrix(); 
+
+      }; 
+
+      this.setAnimationStateToDefaults = () => {
+
+        this.cameraStepPerFrame = .3;                               
+        this.rotate = false; 
+        this.glide = false; 
+        this.forward = true; 
+        this.rotateStep = Math.PI / 180; 
+
+      }; 
+
+      this.setEngineDerivedProperties = () => {
+
+        this.angularStep = Math.PI * 2 / this.numAngularSteps;                               
+        this.angularIndicesToRender = _.range(0, this.numAngularSteps); 
+
       }
-  
-      // Camera settings 
-      this.nearClipDistance = .1; 
-      this.farClipDistance = 400; 
-      this.fovDegrees = 40; 
-      this.cameraStartPos = new THREE.Vector3(0, 0, 0); 
-  
-      // Animation settings 
-      this.cameraStepPerFrame = 1;                                // controls the speed of the camera during animation
-      this.rotate = false; 
-      this.glide = false; 
-      this.forward = true; 
-      this.rotateStep = Math.PI / 180; 
-  
-      // Spatial / Geometric settings 
-      this.planeHeight = 3;                                       // height of planes used in animation 
-      this.numAngularSteps = 12;                                  // number of angular steps at which a stream of objects is rendered
-      this.numObjectsPerAngle = 40;                               // at each angular step, we render this many objects 
-      setAngularStep();                                           // the angular stepping distance for object rendering
-      this.radius = 7;                                            // the radius of the tunnel 
-      this.angularStepFactor = 3.5; 
-      setLensAngularStep();          
-                             
+
+      this.setEngineToDefaultState = () => {
+        
+        // Geometric System parameters 
+        this.planeHeight = 3;                                       
+        this.numAngularSteps = 12;                                  
+        this.numObjectsPerAngle = 25;                                
+        this.radius = 5;                                            
+        this.angularOffset = 0;       
+        this.uniformZSpacing = 1;      
+        this.focalDilationFrontFar = 1; 
+        this.focalDilationFrontNear = .77; 
+        this.parabolicDistortion = 1.0;
+        this.lensWidthFar = this.planeHeight / 2; 
+        this.lensWidthNear = this.lensWidthFar * .75;
+        this.angularStep = Math.PI * 2 / this.numAngularSteps;
+        this.lensAngularStep = this.angularStep / 3.5; 
+
+      };
+
+      this.setAnimationStateToDefaults(); 
+      this.setEngineToDefaultState(); 
+      this.setEngineDerivedProperties(); 
+
+      this.planeSetByAngularIndex = {};                                       
       this.geometries = {}; 
-      this.transforms = {};                                       // the matrix to apply streamwise at each angular step 
-      this.angularOffset = 0;                                     // the angle from which we start stepping around the circle 
-      this.angularIndicesToRender = null;                         // if the element i is in this array, render objects at the ith angular step 
-      this.planeSet = null;                                       // the set of objects rendered at the ith angular step mapped by index 
-      this.uniformZSpacing = 1;                                   // distance between objects rendered within a single stream 
-      
-      this.lensWidthFar = this.planeHeight / 2; 
-      this.lensWidthNear = this.lensWidthFar * .75;
-      this.focalDilationFrontFar = 1; 
-      this.focalDilationFrontNear = .77; 
+      this.transforms = {};  
 
-      this.parabolicDistortion = 1.0; 
-  
-      // Initialize with values 
-      this.angularIndicesToRender = _.range(0, this.numAngularSteps); 
-      this.planeSet = _.range(0, this.numAngularSteps).reduce((acc, curr) => {
-        acc[curr] = []; 
-        return acc; 
-      }, {}); 
-
+      // Uniforms for shaders 
       this.uniforms = { 
         "time": { 
           value: 1.0 
@@ -108,12 +118,14 @@ export default function SpiralizationEngine(container) {
         }
       };
   
+      // Setup world 
       let { scene, camera, renderer } = threejsSetupBasics(container); 
+      this.setCameraStateToDefaults(camera); 
       let clock = new THREE.Clock();
   
+      // Add some lighting 
       scene.add( new THREE.AmbientLight( 0x404040 ) );
-      let pointLight = new THREE.PointLight( 0xffffff, 1 );
-      camera.add( pointLight );
+      camera.add( new THREE.PointLight( 0xffffff, 1 ) );
   
       this.clearScene = function() {
         while (scene.children.length > 0) { 
@@ -135,49 +147,64 @@ export default function SpiralizationEngine(container) {
           NUMCOLORS: this.colorsArr.length 
         }
       });
+
+      // Reusable objects for transform computation
+      let initPos = new THREE.Vector3( 0, 0, 0 ); 
+      let nPos = new THREE.Vector3(); 
+      let fPos = new THREE.Vector3(); 
+      let planeMath = new THREE.Plane(); 
+      let zMat4 = new THREE.Matrix4(); 
+      let mat4 = new THREE.Matrix4(); 
+      let q1 = new THREE.Quaternion();
+      let q2 = new THREE.Quaternion();
+      let v0 = new THREE.Vector3(); 
+      let v1 = new THREE.Vector3(); 
+      let v2 = new THREE.Vector3(); 
+      let cross = new THREE.Vector3(); 
+      let center = new THREE.Vector3(); 
+      let v4 = new THREE.Vector3(); 
+      let v5 = new THREE.Vector3(); 
+      let unitZ = new THREE.Vector3( 0, 0, 1 ); 
+      let planeGeometry = null; 
+      let endVertices = null; 
+      let sind = 1; 
+      let eind = 1; 
   
       this.renderObjects = (config) => {
 
-        // If configuration is specified, update current state 
         if (config) {
+
+          // Reset to default state 
+          this.setEngineToDefaultState(); 
+
+          // Override default state with specified properties 
           let keys = Object.keys(config); 
           for (let k of keys) {
             this[k] = config[k]; 
           }
+
+          // Compute derived properties 
+          this.setEngineDerivedProperties();    
+          
+          // set uniforms if specifed in config 
+          if (config.parabolicDistortion) {
+            this.uniforms.parabolicDistortion.value = config.parabolicDistortion; 
+          }
+
+          // update camera if position specified 
+          if (config.cameraPos) {
+            camera.position.set(...config.cameraPos); 
+            camera.updateProjectionMatrix(); 
+          }
+
         }
 
-        this.recomputeDerivedProperties();
-  
-        // Positions used to define the conical slices 
-        let initPos = new THREE.Vector3(0,0,0); 
-        let nPos = new THREE.Vector3(); 
-        let fPos = new THREE.Vector3(); 
-  
         // 3 conical slices 
         let cNear = new Circle(this.radius * this.focalDilationFrontNear,
                                nPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthNear))); 
         let cMiddle = new Circle(this.radius, initPos); 
         let cFar = new Circle(this.radius * this.focalDilationFrontFar,
                               fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
-  
-        // Reusable objects used to determine transforms 
-        let planeMath = new THREE.Plane(); 
-        let zMat4 = new THREE.Matrix4(); 
-        let mat4 = new THREE.Matrix4(); 
-        let q1 = new THREE.Quaternion();
-        let q2 = new THREE.Quaternion();
-        let v0 = new THREE.Vector3(); 
-        let v1 = new THREE.Vector3(); 
-        let v2 = new THREE.Vector3(); 
-        let cross = new THREE.Vector3(); 
-        let center = new THREE.Vector3(); 
-        let v4 = new THREE.Vector3(); 
-        let v5 = new THREE.Vector3(); 
-        let unitZ = new THREE.Vector3( 0, 0, 1 ); 
-        let planeGeometry = null; 
-        let endVertices = null; 
-        let sind = 1; 
-        let eind = 1; 
 
         let computeTransforms = () => {
 
@@ -250,8 +277,8 @@ export default function SpiralizationEngine(container) {
 
           for (let i = 0; i < this.numAngularSteps; i++) {     
             
-            if (!this.planeSet[i]) {
-              this.planeSet[i] = []; 
+            if (!this.planeSetByAngularIndex[i]) {
+              this.planeSetByAngularIndex[i] = []; 
             }
 
             for (let j = 0; j < this.numObjectsPerAngle; j++) {
@@ -263,7 +290,7 @@ export default function SpiralizationEngine(container) {
               plane.applyMatrix(this.transforms[i].premultiply(zMat4)); 
               scene.add(plane); 
               
-              this.planeSet[i].push(plane); 
+              this.planeSetByAngularIndex[i].push(plane); 
   
             }
           }
@@ -273,13 +300,12 @@ export default function SpiralizationEngine(container) {
         computeTransforms();
         renderPlanes(); 
   
-        
       }
   
       // Set the initial position of the camera 
-      let cameraX = this.cameraStartPos.x; 
-      let cameraY = this.cameraStartPos.y; 
-      let cameraZ = this.cameraStartPos.z; 
+      let cameraX = origin.x; 
+      let cameraY = origin.y; 
+      let cameraZ = origin.z; 
   
       camera.position.set(cameraX, cameraY, cameraZ - 12);
       camera.lookAt(cameraX, cameraY, cameraZ + 1);     
@@ -305,9 +331,8 @@ export default function SpiralizationEngine(container) {
   
       this.fullReRender = (config) => {
         this.clearScene(); 
-        this.renderObjects(config);
+        this.renderObjects(typeof config === 'object' ? config : null);
       }
-
   
       this.renderObjects(); 
   
@@ -317,22 +342,28 @@ export default function SpiralizationEngine(container) {
   
         gui.add(this, 'farClipDistance', 100, 1000).step(10);
         gui.add(this, 'cameraStepPerFrame', 0, 10).step(.05);  
-        gui.add(this, 'rotate'); 
-        gui.add(this, 'glide'); 
+        gui.add(this, 'rotate').listen(); 
+        gui.add(this, 'glide').listen(); 
         gui.add(this, 'forward');
     
-        let c1 = gui.add(this, 'radius', .1, 10).step(.5);
-        let c2 = gui.add(this, 'lensWidthFar', 0, 10).step(.1);
-        let c3 = gui.add(this, 'lensWidthNear', 0, 10).step(.1);
-        let c4 = gui.add(this, 'focalDilationFrontNear', .01, 1); 
-        let c5 = gui.add(this, 'focalDilationFrontFar', .01, 1); 
-        let c6 = gui.add(this, 'lensAngularStep', 0, Math.PI * 2).step(Math.PI * 2 / 100);
-        let c7 = gui.add(this, 'numAngularSteps', 1, 24).step(1); 
-        let c8 = gui.add(this, 'planeHeight', .5, 8).step(.125);
-        let c9 = gui.add(this, 'angularStepFactor', .5, 10).step(.5); 
-        let c10 = gui.add(this, 'parabolicDistortion', 0, 10).step(.25); 
+        let c1 = gui.add(this, 'radius', .1, 10).step(.5).listen();
+        let c2 = gui.add(this, 'lensWidthFar', 0, 10).step(.1).listen();
+        let c3 = gui.add(this, 'lensWidthNear', 0, 10).step(.1).listen();
+        let c4 = gui.add(this, 'focalDilationFrontNear', .01, 1).listen(); 
+        let c5 = gui.add(this, 'focalDilationFrontFar', .01, 1).listen(); 
+        let c6 = gui.add(this, 'lensAngularStep', 0, Math.PI * 2).step(Math.PI * 2 / 100).listen();
+        let c8 = gui.add(this, 'planeHeight', .5, 8).step(.125).listen();
+        let c10 = gui.add(this, 'parabolicDistortion', 0, 10).step(.25).listen(); 
     
-        for (let c of [c1, c2, c3, c4, c5, c6, c7, c8, c9]) c.onChange(this.fullReRender);
+        for (let c of [c1, c2, c3, c4, c5, c6, c8]) c.onChange(this.fullReRender);
+
+        let c7 = gui.add(this, 'numAngularSteps', 1, 24).step(1).listen(); 
+        c7.onChange(v => {
+          // angularStep is a derived property of numAngularSteps
+          this.numAngularSteps = v;
+          this.angularStep = Math.PI * 2 / v; 
+          this.fullReRender(); 
+        })
 
         // Update the uniforms passed to the shader 
         c10.onChange(v => this.uniforms.parabolicDistortion.value = v); 
@@ -345,7 +376,7 @@ export default function SpiralizationEngine(container) {
             this.uniforms.colors.value[index] = stringToThreeColor(newColor); 
           }, i)); 
         }
-        
+
       }; 
   
       animate();

@@ -1,30 +1,60 @@
 const configs = {
 
-    'rotatingSplitColorBleed': {
-        // Zoom in real close with the camera for this one 
-        lensWidthFar: 7.4, 
-        lensWidthNear: 2.2, 
-        focalDilationFrontNear: .64, 
-        focalDilationFrontFar: .5, 
-        lensAngularStep: 3.58 
+    'one': {
 
-    }, 
+        rotate: true, 
+        glide: false, 
 
-    'triangularPrismLeaves': {
-        lensWidthFar: 0, 
-        lensWidthNear: 1.6, 
-        focalDilationFrontNear: .94, 
-        focalDilationFrontFar: 1, 
-        lensAngularStep: .062, 
-
-    }, 
-
-    'geometricTunnel': {
-        lensWidthFar: 2, 
-        lensWidthNear: 7.5, 
+        radius: 2, 
+        lensWidthFar: 1.5, 
+        lensWidthNear: 1.1, 
         focalDilationFrontNear: .77, 
         focalDilationFrontFar: 1, 
-        lensAngularStep: .15
+        lensAngularStep: .15, 
+        numAngularSteps: 12, 
+        planeHeight: 3, 
+        parabolicDistortion: 1, 
+
+        cameraPos: [0, 0, -8.4]
+
+    }, 
+
+    'two': {
+
+        rotate: true,
+        glide: false, 
+
+        radius: 5, 
+        lensWidthFar: 3.3, 
+        lensWidthNear: 3.9, 
+        focalDilationFrontNear: .17, 
+        focalDilationFrontFar: .2, 
+        lensAngularStep: 3.76, 
+        numAngularSteps: 24, 
+        planeHeight: 4, 
+        parabolicDistortion: 1,
+
+        cameraPos: [0, 0, -9.6]
+
+    }, 
+
+    'three': {
+
+        rotate: true,
+        glide: false, 
+
+        radius: 1, 
+        lensWidthFar: 2.8, 
+        lensWidthNear: 5.5, 
+        focalDilationFrontNear: 1, 
+        focalDilationFrontFar: 1, 
+        lensAngularStep: .5, 
+        numAngularSteps: 24, 
+        planeHeight: 2, 
+        parabolicDistortion: .25,
+
+        cameraPos: [0, 0, -5.8]
+
     }
 
 };
