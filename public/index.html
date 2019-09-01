@@ -28,7 +28,9 @@
   </head>
   <body>
     <script type='text/javascript' src='../dat.gui-master/'></script>
-    <script id="vertexShader" type="x-shader/x-vertex">
+
+
+    <script id="vertex-shader-base" type="x-shader/x-vertex">
 
       // Shared value between VS and FS 
       varying vec2 vUv;
@@ -36,10 +38,24 @@
       void main()
       {
         vUv = uv; 
+        gl_Position = projectionMatrix * 
+                      modelViewMatrix * 
+                      vec4( position, 1.0 );
+      }
+    </script>
+
+    <script id="vertex-shader-uv-parabolic" type="x-shader/x-vertex">
+
+      // Shared value between VS and FS 
+      varying vec2 vUv;
+      uniform float parabolicDistortion; 
+
+      void main()
+      {
+        vUv = uv; 
         vec3 pos = position; 
 
         // apply uv displacement based on distance from geometric centroid 
-        float parabolicDistortion = 1.0; 
         vec2 uvCentroid = vec2(.5, .5); 
         float d = distance(vec2(uv.x, uv.y), uvCentroid); 
         pos = pos + normal * 1.0 / d * parabolicDistortion; 
@@ -49,40 +65,9 @@
                       vec4( pos, 1.0 );
       }
     </script>
-    <!-- <script id="fragment_shader" type="x-shader/x-fragment">
-
-      // Cycling discretized rainbow gradient shader 
-
-      uniform float time; 
-      uniform float speed; 
-      uniform vec3 colors[NUMCOLORS]; 
-      varying vec2 vUv;
-
-			void main(void) {
-
-        // Compute modulus wrt time so we dont overflow when 
-        // the shader is run continuously for a long time 
-        float offset = mod(time * speed, float(NUMCOLORS)); 
-
-        float dGradient = 1.0 / float(NUMCOLORS);
-        float index = floor(vUv.y / dGradient + offset); 
-        int iindex = int(mod(index, float(NUMCOLORS))); 
-        vec3 color; 
-        for (int i = 0; i < NUMCOLORS; i++) {
-          if (i == iindex) {
-            color = colors[i]; 
-            break; 
-          }
-        }
-
-        //vec3 color = colors[int(index)]; 
-        gl_FragColor = vec4(color, 1.0 );
-
-      }
-      
-    </script> -->
     
-    <script id="fragment_shader" type="x-shader/x-fragment">
+    
+    <script id="fragment-shader-cycling-discrete-gradient" type="x-shader/x-fragment">
 
       // Cycling discretized rainbow gradient shader 
 
