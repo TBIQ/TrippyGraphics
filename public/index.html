@@ -44,35 +44,98 @@
       }
     </script>
 
+    <script id="raw-instanced-vertex-shader" type="x-shader/x-vertex">
+      precision highp float;
+      uniform mat4 modelViewMatrix;
+      uniform mat4 projectionMatrix;
+      uniform mat3 normalMatrix;
+      attribute vec2 uv; 
+      
+      //'blueprint' attribute
+      attribute vec3 position;
+      
+      //instance attributes 
+      attribute vec3 offset;
+      attribute vec4 orientation;
+
+      // shared attributes 
+      varying vec2 vUv; 
+      
+      // transforms the 'blueprint' geometry with instance attributes
+      vec3 transform( inout vec3 position, vec3 T, vec4 R, vec3 S ) {
+          //applies the scale
+          position *= S;
+          //computes the rotation where R is a (vec4) quaternion
+          position += 2.0 * cross( R.xyz, cross( R.xyz, position ) + R.w * position );
+          //translates the transformed 'blueprint'
+          position += T;
+          //return the transformed position
+          return position;
+      }
+      
+      void main() {
+          // set uv coords
+          vUv = uv; 
+          //collects the 'blueprint' coordinates
+          vec3 pos = position;
+          //transform it
+          transform( pos, offset, orientation, vec3( 1.0, 1.0, 1.0 ) );
+          //project to get the fragment position
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
+      }
+    </script>
+
     <script id="vertex-shader-uv-parabolic" type="x-shader/x-vertex">
 
-      // Shared value between VS and FS 
       varying vec2 vUv;
       uniform float parabolicDistortion; 
+      attribute vec3 offset;
 
       void main()
       {
         vUv = uv; 
-        vec3 pos = position; 
+        vec3 pos = offset; 
 
         // apply uv displacement based on distance from geometric centroid 
-        vec2 uvCentroid = vec2(.5, .5); 
-        float d = distance(vec2(uv.x, uv.y), uvCentroid); 
-        pos = pos + normal * 1.0 / d * parabolicDistortion; 
+        // vec2 uvCentroid = vec2(.5, .5); 
+        // float d = distance(vec2(uv.x, uv.y), uvCentroid); 
+        // pos = pos + normal * 1.0 / d * parabolicDistortion; 
 
         gl_Position = projectionMatrix * 
                       modelViewMatrix * 
                       vec4( pos, 1.0 );
       }
     </script>
+
+    <script id="vertex-shader-uv-wave" type="x-shader/x-vertex">
+
+      // Shared value between VS and FS 
+      varying vec2 vUv;
+      
+      attribute vec3 offset; 
+
+      void main()
+      {
+        vUv = uv;
+        gl_Position = projectionMatrix * 
+                      modelViewMatrix * 
+                      vec4( offset +  sin( 10.0 * vUv.x ), 1.0 );
+      }
+    </script>
     
     
     <script id="fragment-shader-cycling-discrete-gradient" type="x-shader/x-fragment">
+
+      precision highp float; 
 
       // Cycling discretized rainbow gradient shader 
 
       uniform float time; 
       uniform float speed; 
+
+      uniform bool sinusoidX; 
+      uniform bool sinusoidY; 
+
       uniform vec3 colors[NUMCOLORS]; 
       varying vec2 vUv;
 
@@ -81,6 +144,14 @@
         // Compute modulus wrt time so we dont overflow when 
         // the shader is run continuously for a long time 
         float offset = mod(time * speed, float(NUMCOLORS)); 
+
+        // Add sinosuoidal offset to original offset based on uv coord
+        if (sinusoidX) {
+          offset = offset + sin(20.0 * vUv.x); 
+        }
+        if (sinusoidY) {
+          offset = offset + sin(20.0 * vUv.y); 
+        }
 
         float dGradient = 1.0 / float(NUMCOLORS);
         float index = floor(vUv.y / dGradient + offset); 
@@ -93,12 +164,31 @@
           }
         }
 
-        
-
         gl_FragColor = vec4( color, 1.0 );
-
       }
       
+    </script>
+
+    <script id="aFragmentShader" type="x-shader/x-fragment">
+      
+      precision highp float;
+      varying vec2 vUv; 
+
+      void main() {
+  
+        gl_FragColor = vec4( vUv, .5 , 1.0 );
+  
+      }
+    </script>
+
+    <script id="aVertexShader" type="x-shader/x-vertex">
+
+      attribute vec3 offset;
+      void main() {
+  
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( offset, 1.0 );
+  
+      }
     </script>
     
     <div id="root"></div>

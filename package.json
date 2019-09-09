@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "homepage": "http://brycemorrow4564.github.io/TrippyGraphics",
   "dependencies": {
+    "@tweenjs/tween.js": "^18.2.2",
     "antd": "^3.22.2",
     "babel-plugin-glslify": "^2.0.0",
     "dat.gui": "^0.7.6",

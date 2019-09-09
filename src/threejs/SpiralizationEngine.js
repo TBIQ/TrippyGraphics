@@ -4,7 +4,9 @@ import glslify from 'glslify'
 import _ from "lodash";
 import OrbitControls from "orbit-controls-es6"; 
 import Circle from "./Circle"; 
-import { stringToThreeColor, threejsSetupBasics } from "./util"; 
+import TWEEN from '@tweenjs/tween.js';
+import configs from "./SpiralizationEngineConfigurations"; 
+import { stringToThreeColor, threejsSetupBasics, BufferGeometryCentroidComputer } from "./util"; 
 
 
 export default function SpiralizationEngine(container) {
@@ -36,6 +38,10 @@ export default function SpiralizationEngine(container) {
         'rgb(255, 152, 0)',   // orange 
         'rgb(255, 87, 34)',   // deep orange 
       ]; 
+
+      // this.colorsArr = _.range(0, 6).map(i => i % 3 == 0 ? '#fff' : '#000'); 
+      // this.colorsArr[5] = '#ff0000';
+
       this.colorsObj = _.range(0, this.colorsArr.length).reduce((acc, cur, i) => {
         acc[cur] = this.colorsArr[cur]; 
         return acc; 
@@ -59,7 +65,7 @@ export default function SpiralizationEngine(container) {
 
       this.setAnimationStateToDefaults = () => {
 
-        this.cameraStepPerFrame = .3;                               
+        this.cameraStepPerFrame = .15;                               
         this.rotate = false; 
         this.glide = false; 
         this.forward = true; 
@@ -75,17 +81,23 @@ export default function SpiralizationEngine(container) {
       }
 
       this.setEngineToDefaultState = () => {
+
+        // Constants 
+        this.MAX_NUM_ANGULAR_STEPS = 24; 
+        this.MAX_NUM_INSTANCES = this.MAX_NUM_ANGULAR_STEPS * 1000; 
+        this.HIDE_POS = new THREE.Vector3(100, 100, 100);
         
         // Geometric System parameters 
         this.planeHeight = 3;                                       
         this.numAngularSteps = 12;                                  
-        this.numObjectsPerAngle = 25;                                
+        this.numObjectsPerAngle = 400;                                
         this.radius = 5;                                            
         this.angularOffset = 0;       
-        this.uniformZSpacing = 1;      
+        this.uniformZSpacing = 2;   
+        this.spiralSpacing = 0;    
         this.focalDilationFrontFar = 1; 
         this.focalDilationFrontNear = .77; 
-        this.parabolicDistortion = 1.0;
+        this.parabolicDistortion = 0;
         this.lensWidthFar = this.planeHeight / 2; 
         this.lensWidthNear = this.lensWidthFar * .75;
         this.angularStep = Math.PI * 2 / this.numAngularSteps;
@@ -97,9 +109,9 @@ export default function SpiralizationEngine(container) {
       this.setEngineToDefaultState(); 
       this.setEngineDerivedProperties(); 
 
-      this.planeSetByAngularIndex = {};                                       
-      this.geometries = {}; 
-      this.transforms = {};  
+      this.transforms = {}; 
+      
+      for (let i = 0; i < this.MAX_NUM_ANGULAR_STEPS; i++) this.transforms[i] = new THREE.Matrix4(); 
 
       // Uniforms for shaders 
       this.uniforms = { 
@@ -115,6 +127,12 @@ export default function SpiralizationEngine(container) {
         }, 
         'parabolicDistortion': {
           value: this.parabolicDistortion
+        }, 
+        'sinusoidX': {
+          value: false
+        },
+        'sinusoidY': {
+          value: false
         }
       };
   
@@ -136,24 +154,21 @@ export default function SpiralizationEngine(container) {
       // let controls = new OrbitControls( camera, renderer.domElement );
       // controls.enabled = true;
   
-      let vertexShader = document.getElementById('vertex-shader-uv-parabolic').textContent;
-      let cyclingDiscreteGradientShader = document.getElementById('fragment-shader-cycling-discrete-gradient').textContent; 
-      let cyclingGradientMaterial = new THREE.ShaderMaterial({ 
+      let rawMaterial = new THREE.RawShaderMaterial({ 
         uniforms: this.uniforms, 
-        vertexShader, 
-        fragmentShader: cyclingDiscreteGradientShader,
         side: THREE.DoubleSide, 
         defines: {
           NUMCOLORS: this.colorsArr.length 
-        }
-      });
+        },
+        vertexShader: document.getElementById('raw-instanced-vertex-shader').textContent, 
+        fragmentShader: document.getElementById('fragment-shader-cycling-discrete-gradient').textContent
+      }); 
 
       // Reusable objects for transform computation
       let initPos = new THREE.Vector3( 0, 0, 0 ); 
       let nPos = new THREE.Vector3(); 
       let fPos = new THREE.Vector3(); 
       let planeMath = new THREE.Plane(); 
-      let zMat4 = new THREE.Matrix4(); 
       let mat4 = new THREE.Matrix4(); 
       let q1 = new THREE.Quaternion();
       let q2 = new THREE.Quaternion();
@@ -165,11 +180,42 @@ export default function SpiralizationEngine(container) {
       let v4 = new THREE.Vector3(); 
       let v5 = new THREE.Vector3(); 
       let unitZ = new THREE.Vector3( 0, 0, 1 ); 
-      let planeGeometry = null; 
+      let instancedPlaneGeometry = new THREE.InstancedBufferGeometry(); 
       let endVertices = null; 
       let sind = 1; 
       let eind = 1; 
-  
+      let CentroidComputer = new BufferGeometryCentroidComputer(); 
+
+      let offsets = new Array(this.MAX_NUM_INSTANCES * 3); 
+      let orientations = new Array(this.MAX_NUM_INSTANCES * 4); 
+
+      let offsetAttribute = new THREE.InstancedBufferAttribute( new Float32Array(offsets), 3 ).setDynamic( true );
+      let orientationAttribute = new THREE.InstancedBufferAttribute( new Float32Array(orientations), 4 ).setDynamic( true );      
+
+      for (let i = 0; i < this.MAX_NUM_INSTANCES; i++) {
+        offsetAttribute.setXYZ(i, this.HIDE_POS.x, this.HIDE_POS.y, this.HIDE_POS.z);
+      }
+
+      instancedPlaneGeometry.addAttribute('offset', offsetAttribute); 
+      instancedPlaneGeometry.addAttribute('orientation', orientationAttribute);
+
+      let offsetsHideAfterIndex = (j) => {
+
+        while ( j < this.MAX_NUM_INSTANCES ) {
+          
+          // early stopping 
+          if (offsetAttribute.array[j] === this.HIDE_POS.x && 
+              offsetAttribute.array[j+1] === this.HIDE_POS.y && 
+              offsetAttribute.array[j+2] === this.HIDE_POS.z) {
+            break; 
+          }
+
+          offsetAttribute.setXYZ(j++, this.HIDE_POS.x, this.HIDE_POS.y, this.HIDE_POS.z); 
+
+        }
+
+      }
+
       this.renderObjects = (config) => {
 
         if (config) {
@@ -206,20 +252,33 @@ export default function SpiralizationEngine(container) {
         let cFar = new Circle(this.radius * this.focalDilationFrontFar,
                               fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
 
+        let singletonPlaneGeometry = null; 
+
         let computeTransforms = () => {
 
+          let rad = -this.angularStep + this.angularOffset;
+
           for (let i = 0; i < this.numAngularSteps; i++) {
-  
-            let rad = (this.angularStep * i) + this.angularOffset; 
-  
+
+            rad += this.angularStep; 
+
             let p1 = cNear.pos(rad - this.lensAngularStep); 
             let p2 = cMiddle.pos(rad); 
             let p3 = cFar.pos(rad + this.lensAngularStep); 
 
             let planeWidth = p1.distanceTo(p3); 
 
-            planeGeometry = new THREE.PlaneGeometry( planeWidth, this.planeHeight, 30 ); 
-            let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
+            if (!singletonPlaneGeometry) {
+
+              singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 3, 3 ); 
+
+              instancedPlaneGeometry.addAttribute('uv', singletonPlaneGeometry.attributes.uv); 
+              instancedPlaneGeometry.addAttribute('normal', singletonPlaneGeometry.attributes.normal); 
+              instancedPlaneGeometry.addAttribute('position', singletonPlaneGeometry.attributes.position); 
+              instancedPlaneGeometry.setIndex(singletonPlaneGeometry.index); 
+
+            }
+            
             planeMath.setFromCoplanarPoints(p1, p2, p3); 
 
             cross.crossVectors( 
@@ -240,7 +299,8 @@ export default function SpiralizationEngine(container) {
 
             endVertices = [p1, p3, v4, v5];
 
-            let transform = new THREE.Matrix4();  
+            let transform = this.transforms[i]; 
+            transform.identity();  
 
             // q1 rotates plane so we are orthogonal to target planar surface 
             q1.setFromUnitVectors(unitZ, planeMath.normal); 
@@ -254,7 +314,11 @@ export default function SpiralizationEngine(container) {
 
             q2.setFromUnitVectors(
               v0
-                .copy(plane.geometry.vertices[sind])
+                .set(
+                  singletonPlaneGeometry.attributes.position.array[sind * 3 + 0],
+                  singletonPlaneGeometry.attributes.position.array[sind * 3 + 1],
+                  singletonPlaneGeometry.attributes.position.array[sind * 3 + 2]
+                )
                 .applyMatrix4(transform)
                 .sub(center)
                 .normalize(), 
@@ -263,11 +327,8 @@ export default function SpiralizationEngine(container) {
             ); 
 
             transform.identity(); 
-            // transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
+            transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
             transform.multiply(mat4.makeRotationFromQuaternion(q1.premultiply(q2))); 
-
-            this.transforms[i] = transform; 
-            this.geometries[i] = planeGeometry;
               
           }
 
@@ -275,31 +336,49 @@ export default function SpiralizationEngine(container) {
 
         let renderPlanes = () => {
 
-          for (let i = 0; i < this.numAngularSteps; i++) {     
-            
-            if (!this.planeSetByAngularIndex[i]) {
-              this.planeSetByAngularIndex[i] = []; 
-            }
+          let instanceI = 0;  
+
+          for (let i = 0; i < this.numAngularSteps; i++) {   
+
+            // Compute position for ith angular step 
+            let centroid = CentroidComputer.computeGeometricCentroid(singletonPlaneGeometry).applyMatrix4(this.transforms[i]); 
+
+            // Compute the rotation for the ith angular step 
+            q1.setFromRotationMatrix(this.transforms[i]); 
+
+            let zistep = i * this.spiralSpacing;
+            let zjstep = -this.uniformZSpacing;  
 
             for (let j = 0; j < this.numObjectsPerAngle; j++) {
-                
-              zMat4.identity();
-              zMat4.makeTranslation(0, 0, j); 
-              
-              let plane = new THREE.Mesh( planeGeometry, cyclingGradientMaterial ); 
-              plane.applyMatrix(this.transforms[i].premultiply(zMat4)); 
-              scene.add(plane); 
-              
-              this.planeSetByAngularIndex[i].push(plane); 
-  
+
+              zjstep += this.uniformZSpacing; 
+              let z = zistep + zjstep; 
+
+              offsetAttribute.setXYZ(instanceI, centroid.x, centroid.y, z); 
+              orientationAttribute.setXYZW(instanceI, q1.x, q1.y, q1.z, q1.w); 
+
+              instanceI += 1; 
+
             }
+
           }
+
+          offsetsHideAfterIndex(instanceI);        
+          
+          offsetAttribute.needsUpdate = true; 
+          orientationAttribute.needsUpdate = true; 
+
+          let mesh = new THREE.Mesh( instancedPlaneGeometry, rawMaterial ); 
+
+          mesh.frustumCulled = false; 
+
+          scene.add( mesh ); 
 
         }
 
         computeTransforms();
         renderPlanes(); 
-  
+
       }
   
       // Set the initial position of the camera 
@@ -308,10 +387,11 @@ export default function SpiralizationEngine(container) {
       let cameraZ = origin.z; 
   
       camera.position.set(cameraX, cameraY, cameraZ - 12);
-      camera.lookAt(cameraX, cameraY, cameraZ + 1);     
+      camera.lookAt(0, 0, 0);     
   
-      let animate = () => {
+      let animate = (time) => {
         requestAnimationFrame( animate );
+        TWEEN.update(time);
         this.uniforms.time.value += clock.getDelta(); 
         if (this.farClipDistance !== camera.far) {
           camera.far = this.farClipDistance; 
@@ -334,7 +414,7 @@ export default function SpiralizationEngine(container) {
         this.renderObjects(typeof config === 'object' ? config : null);
       }
   
-      this.renderObjects(); 
+      this.fullReRender(); 
   
       this.enableGuiControls = () => {
   
@@ -380,6 +460,27 @@ export default function SpiralizationEngine(container) {
       }; 
   
       animate();
+
+      let cend = configs['one']; 
+      delete cend['glide']; 
+      delete cend['rotate']; 
+      delete cend['cameraPos'];
+
+      let tweenKeys = Object.keys(cend); 
+
+      let cstart = {}; 
+      for (let k of tweenKeys) { 
+        cstart[k] = this[k]; 
+      }
+
+      new TWEEN.Tween(cstart) // Create a new tween that modifies 'coords'.
+        .to(cend, 2000) // Move to (300, 200) in 1 second.
+        .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
+        .onUpdate(() => { // Called after tween.js updates 'coords'.
+            debugger
+            this.fullReRender(cstart); 
+        })
+        .start(); // Start the tween immediately.
 
     }
 

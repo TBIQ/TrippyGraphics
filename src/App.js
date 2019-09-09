@@ -16,7 +16,7 @@ function App() {
 
   const [initialized, setInitialized] = useState(false);
   const [configNames, setConfigNames] = useState([]); 
-  const [selectedConfig, setSelectedConfig] = useState('five'); 
+  const [selectedConfig, setSelectedConfig] = useState(null); 
   const [engine, setEngine] = useState(null); 
 
   useEffect(() => {

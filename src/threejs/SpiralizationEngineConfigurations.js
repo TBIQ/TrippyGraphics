@@ -93,7 +93,28 @@ const configs = {
 
         cameraPos: [0, 0, -5.8]
 
-    }
+    },
+    
+    'six': {
+
+        rotate: true,
+        glide: false, 
+
+        radius: 3.5, 
+        lensWidthFar: 6.3, 
+        lensWidthNear: 2.6, 
+        focalDilationFrontNear: .54, 
+        focalDilationFrontFar: .5, 
+        lensAngularStep: 2.32, 
+        numAngularSteps: 6, 
+        planeHeight: 2.875, 
+        parabolicDistortion: 1,
+
+        cameraPos: [0, 0, -1.5]
+
+    }, 
+
+
 
 };
 
