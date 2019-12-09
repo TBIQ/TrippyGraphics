@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SpiralizationEngine from "./threejs/SpiralizationEngine"; 
+// import MeshDeformation from "./threejs/MeshDeformation"; 
 import configs from "./threejs/SpiralizationEngineConfigurations"; 
 import _ from "lodash"; 
 import { Select, Layout } from 'antd'; 
@@ -23,9 +24,14 @@ function App() {
 
     async function startEngine() {
 
+      // let engine = new MeshDeformation(threejsContainer.current); 
+      // engine.start(); 
+      // setInitialized(true); 
+      // setEngine(engine); 
+
       let engine = new SpiralizationEngine(threejsContainer.current);
       engine.start(); 
-      engine.enableGuiControls(); 
+      // engine.enableGuiControls(); 
 
       setInitialized(true); 
       setEngine(engine); 

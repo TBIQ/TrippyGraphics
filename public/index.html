@@ -29,6 +29,34 @@
   <body>
     <script type='text/javascript' src='../dat.gui-master/'></script>
 
+    <script id="vertex-shader-cube" type="x-shader/x-vertex">
+
+      float maxdist = 5.0; 
+      vec3 uz = vec3( 0.0, 0.0, 1.0 ); 
+
+      varying vec2 vUv;
+
+      void main()
+      {
+        vUv = uv; 
+
+        float offsetFactor = 0.0; 
+
+        
+
+        if (position.z < 0.0 && normal.z > 0.0) {
+          float dist = distance(position, vec3(position.x, position.y, 0.0)); 
+          if (dist < maxdist) {
+            // offsetFactor = .5;  
+          }
+        }
+
+        gl_Position = projectionMatrix * 
+                      modelViewMatrix * 
+                      vec4( position + offsetFactor * normal, 1.0 );
+      }
+    </script>
+
 
     <script id="vertex-shader-base" type="x-shader/x-vertex">
 
@@ -187,6 +215,32 @@
       void main() {
   
         gl_Position = projectionMatrix * modelViewMatrix * vec4( offset, 1.0 );
+  
+      }
+    </script>
+
+    <script id="frag-shader-wireframe" type="x-shader/x-fragment">
+      
+      varying vec2 vUv; 
+      uniform float wireframeUvStep; 
+      uniform float wireframeWidth; 
+
+      void main() {
+
+        vec4 color; 
+
+        if (abs(mod(vUv.x, wireframeUvStep)) < wireframeWidth || 
+            abs(mod(vUv.y, wireframeUvStep)) < wireframeWidth) {
+
+          color = vec4( 0.0, 255.0, 0.0, 1.0 ); 
+
+        } else {
+
+          color = vec4( 0.0, 0.0, 0.0, 0 ); 
+
+        }
+  
+        gl_FragColor = color; 
   
       }
     </script>
