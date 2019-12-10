@@ -6,7 +6,7 @@ import configs from "./SpiralizationEngineConfigurations";
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
 import ObjectModel from "./ObjectModel"; 
-import { Animation } from "./Animation"; 
+import { Animation, AnimationGroup, AnimationChain } from "./Animation"; 
 
 class SpiralizationEngine {
 
@@ -33,8 +33,26 @@ class SpiralizationEngine {
     Interpolate from the current configuration to some target configuration 
     */ 
 
-    let animation = new Animation(this.objectModel, cend, 2000); 
-    animation.run(); 
+    (
+      new AnimationChain([
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['one'], 2000)
+        ]),
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['two'], 2000)
+        ]),
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['three'], 2000)
+        ]),
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['four'], 2000)
+        ]),
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['five'], 2000)
+        ])
+      ])
+    )
+    .run()
 
   }
 

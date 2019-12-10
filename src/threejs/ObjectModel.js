@@ -81,8 +81,6 @@ class ObjectModel {
 
     }
 
-
-
     setToDefault() {
         this.applyConfig(ObjectModel.defaultState); 
     };

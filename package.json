@@ -5,6 +5,7 @@
   "dependencies": {
     "@tweenjs/tween.js": "^18.2.2",
     "antd": "^3.22.2",
+    "async": "^3.1.0",
     "audio-loader": "^1.0.3",
     "audio-play": "^2.2.1",
     "babel-plugin-glslify": "^2.0.0",

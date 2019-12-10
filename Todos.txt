@@ -1,2 +1,0 @@
-Multi-instance planar geometries, with a single geometry per angular step 
-Integrate glslify 
