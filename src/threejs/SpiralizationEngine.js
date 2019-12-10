@@ -2,14 +2,11 @@ import * as THREE from "three";
 import * as dat from 'dat.gui';
 import _ from "lodash";
 import TWEEN from '@tweenjs/tween.js';
-import palettes from "./ColorPalettes"; 
 import configs from "./SpiralizationEngineConfigurations"; 
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
 import ObjectModel from "./ObjectModel"; 
-import { stringToThreeColor, BufferGeometryCentroidComputer } from "./util"; 
-import Circle from "./Circle"; 
-import { object } from "prop-types";
+import { Animation } from "./Animation"; 
 
 class SpiralizationEngine {
 
@@ -31,45 +28,14 @@ class SpiralizationEngine {
 
   }
 
-  clearScene() {
-    // Remove all items from scene 
-    while (this.scene.children.length > 0) { 
-      this.scene.remove(this.scene.children[0]); 
-    }
-  }
-
-  removeNonInterpolationParameters(obj) {
-    obj = Object.assign({}, obj); // copy input config object 
-    let delKeys = Object.keys(this.cameraModel.cameraAnimationState); 
-    for (let dk of delKeys) {
-      if (dk in obj) {
-        delete obj[dk]; 
-      }
-    }
-    return obj; 
-  }
-
   interpolate(cend=configs['one']) {
     /*
     Interpolate from the current configuration to some target configuration 
     */ 
-    cend = this.removeNonInterpolationParameters(configs['one']); 
-    let tweenKeys = Object.keys(cend); 
 
-    let cstart = {}; 
-    for (let k of tweenKeys) { 
-      cstart[k] = this.objectModel[k]; 
-    }
+    let animation = new Animation(this.objectModel, cend, 2000); 
+    animation.run(); 
 
-    new TWEEN.Tween(cstart) // Create a new tween that modifies 'coords'.
-      .to(cend, 2000) // Move to (300, 200) in 1 second.
-      .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
-      .onUpdate(() => { // Called after tween.js updates 'coords'.
-          this.objectModel.applyConfig(cstart); 
-          this.clearScene(); 
-          this.objectModel.render(); 
-      })
-      .start(); // Start the tween immediately.
   }
 
   start() {
@@ -77,7 +43,7 @@ class SpiralizationEngine {
     Starts render loop 
     */ 
 
-    this.clearScene(); 
+    this.objectModel.clearScene();
     this.objectModel.render(); 
 
     let animate = (time) => {
@@ -88,7 +54,8 @@ class SpiralizationEngine {
     }
 
     animate(); 
-    this.interpolate();
+    
+    this.interpolate(configs['one']);
 
   }
 
@@ -96,360 +63,9 @@ class SpiralizationEngine {
 
 export default SpiralizationEngine; 
 
-
 // export default function SpiralizationEngine(container) {
 
-//     this.start = () => {
-
-//       // Origin of the world coordinate system 
-//       let origin = new THREE.Vector3(0, 0, 0); 
-
-//       // Colors have array representation for iteration and 
-//       // object index mapping representation for control via dat.gui 
-//       this.colorsArr = palettes['material']
-
-//       this.colorsObj = _.range(0, this.colorsArr.length).reduce((acc, cur, i) => {
-//         acc[cur] = this.colorsArr[cur]; 
-//         return acc; 
-//       }, {}); 
-
-//       this.setCameraStateToDefaults = (camera) => {
-
-//         this.nearClipDistance = .1; 
-//         this.farClipDistance = 400; 
-//         this.fovDegrees = 40; 
-
-//         camera.fov = this.fovDegrees;
-//         camera.aspect = window.innerWidth / window.innerHeight; 
-//         camera.near = this.nearClipDistance; 
-//         camera.far = this.farClipDistance; 
-        
-//         // Must be called after any change to the camera parameters 
-//         camera.updateProjectionMatrix(); 
-
-//       }; 
-
-//       this.setAnimationStateToDefaults = () => {
-
-//         this.cameraStepPerFrame = .15;                               
-//         this.rotate = false; 
-//         this.glide = false; 
-//         this.forward = true; 
-//         this.rotateStep = Math.PI / 180; 
-
-//       }; 
-
-//       this.setEngineDerivedProperties = () => {
-
-//         this.angularStep = Math.PI * 2 / this.numAngularSteps;                               
-//         this.angularIndicesToRender = _.range(0, this.numAngularSteps); 
-
-//       }
-
-//       this.setEngineToDefaultState = () => {
-
-//         // Constants 
-//         this.MAX_NUM_ANGULAR_STEPS = 24; 
-//         this.MAX_NUM_INSTANCES = this.MAX_NUM_ANGULAR_STEPS * 1000; 
-//         this.HIDE_POS = new THREE.Vector3(100, 100, 100);
-        
-//         // Geometric System parameters 
-//         this.planeHeight = 3;                                       
-//         this.numAngularSteps = 12;                                  
-//         this.numObjectsPerAngle = 400;                                
-//         this.radius = 5;                                            
-//         this.angularOffset = 0;       
-//         this.uniformZSpacing = 2;   
-//         this.spiralSpacing = 0;    
-//         this.focalDilationFrontFar = 1; 
-//         this.focalDilationFrontNear = .77; 
-//         this.parabolicDistortion = 0;
-//         this.lensWidthFar = this.planeHeight / 2; 
-//         this.lensWidthNear = this.lensWidthFar * .75;
-//         this.angularStep = Math.PI * 2 / this.numAngularSteps;
-//         this.lensAngularStep = this.angularStep / 3.5; 
-
-//       };
-
-//       this.setAnimationStateToDefaults(); 
-//       this.setEngineToDefaultState(); 
-//       this.setEngineDerivedProperties();
-
-//       this.transforms = {}; 
-      
-//       for (let i = 0; i < this.MAX_NUM_ANGULAR_STEPS; i++) this.transforms[i] = new THREE.Matrix4(); 
-
-//       //Uniforms for shaders 
-//       this.shaderUniforms = { 
-//         "time": { 
-//           value: 1.0 
-//         },
-//         "speed": {
-//           value: 6.0 
-//         },
-//         "colors": {
-//           'type': 'v3v', 
-//           'value': this.colorsArr.map(stringToThreeColor)
-//         }, 
-//         'parabolicDistortion': {
-//           value: this.parabolicDistortion
-//         }, 
-//         'sinusoidX': {
-//           value: false
-//         },
-//         'sinusoidY': {
-//           value: false
-//         }
-//       };
-  
-//       // Setup world 
-//       let { scene, camera, renderer } = threejsSetupBasics(container); 
-//       this.setCameraStateToDefaults(camera); 
-//       let clock = new THREE.Clock();
-  
-//       // Add some lighting 
-//       scene.add( new THREE.AmbientLight( 0x404040 ) );
-//       camera.add( new THREE.PointLight( 0xffffff, 1 ) );
-  
-//       this.clearScene = function() {
-//         while (scene.children.length > 0) { 
-//           scene.remove(scene.children[0]); 
-//         }
-//       }
-      
-//       // let controls = new OrbitControls( camera, renderer.domElement );
-//       // controls.enabled = true;
-  
-//       let rawMaterial = new THREE.RawShaderMaterial({ 
-//         uniforms: this.shaderUniforms, 
-//         side: THREE.DoubleSide, 
-//         defines: {
-//           NUMCOLORS: this.colorsArr.length 
-//         },
-//         vertexShader: document.getElementById('raw-instanced-vertex-shader').textContent, 
-//         fragmentShader: document.getElementById('fragment-shader-cycling-discrete-gradient').textContent
-//       }); 
-
-//       let initPos = new THREE.Vector3( 0, 0, 0 ); 
-//       let nPos = new THREE.Vector3(); 
-//       let fPos = new THREE.Vector3(); 
-//       let planeMath = new THREE.Plane(); 
-//       let mat4 = new THREE.Matrix4(); 
-//       let q1 = new THREE.Quaternion();
-//       let q2 = new THREE.Quaternion();
-//       let v0 = new THREE.Vector3(); 
-//       let v1 = new THREE.Vector3(); 
-//       let v2 = new THREE.Vector3(); 
-//       let cross = new THREE.Vector3(); 
-//       let center = new THREE.Vector3(); 
-//       let v4 = new THREE.Vector3(); 
-//       let v5 = new THREE.Vector3(); 
-//       let unitZ = new THREE.Vector3( 0, 0, 1 ); 
-//       let instancedPlaneGeometry = new THREE.InstancedBufferGeometry(); 
-//       let endVertices = null; 
-//       let sind = 1; 
-//       let eind = 1; 
-//       let CentroidComputer = new BufferGeometryCentroidComputer(); 
-
-//       let offsets = new Array(this.MAX_NUM_INSTANCES * 3); 
-//       let orientations = new Array(this.MAX_NUM_INSTANCES * 4); 
-
-//       let offsetAttribute = new THREE.InstancedBufferAttribute( new Float32Array(offsets), 3 ).setDynamic( true );
-//       let orientationAttribute = new THREE.InstancedBufferAttribute( new Float32Array(orientations), 4 ).setDynamic( true );      
-
-//       for (let i = 0; i < this.MAX_NUM_INSTANCES; i++) {
-//         offsetAttribute.setXYZ(i, this.HIDE_POS.x, this.HIDE_POS.y, this.HIDE_POS.z);
-//       }
-
-//       instancedPlaneGeometry.addAttribute('offset', offsetAttribute); 
-//       instancedPlaneGeometry.addAttribute('orientation', orientationAttribute);
-
-//       let offsetsHideAfterIndex = (j) => {
-
-//         while ( j < this.MAX_NUM_INSTANCES ) {
-          
-//           // early stopping 
-//           if (offsetAttribute.array[j] === this.HIDE_POS.x && 
-//               offsetAttribute.array[j+1] === this.HIDE_POS.y && 
-//               offsetAttribute.array[j+2] === this.HIDE_POS.z) {
-//             break; 
-//           }
-
-//           offsetAttribute.setXYZ(j++, this.HIDE_POS.x, this.HIDE_POS.y, this.HIDE_POS.z); 
-
-//         }
-
-//       }
-
-//       this.renderObjects = (config) => {
-
-//         if (config) {
-
-//           // Reset to default state 
-//           this.setEngineToDefaultState(); 
-
-//           // Override default state with specified properties 
-//           let keys = Object.keys(config); 
-//           for (let k of keys) {
-//             this[k] = config[k]; 
-//           }  
-          
-//           // set uniforms if specifed in config 
-//           if (config.parabolicDistortion) {
-//             this.shaderUniforms.parabolicDistortion.value = config.parabolicDistortion; 
-//           }
-
-//           // update camera if position specified 
-//           if (config.cameraPos) {
-//             camera.position.set(...config.cameraPos); 
-//             camera.updateProjectionMatrix(); 
-//           }
-
-//         }
-
-//         // 3 conical slices 
-//         let cNear = new Circle(this.radius * this.focalDilationFrontNear,
-//                                nPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthNear))); 
-//         let cMiddle = new Circle(this.radius, initPos); 
-//         let cFar = new Circle(this.radius * this.focalDilationFrontFar,
-//                               fPos.copy(initPos).add(new THREE.Vector3(0, 0, this.lensWidthFar))); 
-
-//         let singletonPlaneGeometry = null; 
-
-//         let computeTransforms = () => {
-
-//           let rad = -this.angularStep + this.angularOffset;
-
-//           for (let i = 0; i < this.numAngularSteps; i++) {
-
-//             rad += this.angularStep; 
-
-//             let p1 = cNear.pos(rad - this.lensAngularStep); 
-//             let p2 = cMiddle.pos(rad); 
-//             let p3 = cFar.pos(rad + this.lensAngularStep); 
-
-//             let planeWidth = p1.distanceTo(p3); 
-
-//             if (!singletonPlaneGeometry) {
-
-//               singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 3, 3 ); 
-
-//               instancedPlaneGeometry.addAttribute('uv', singletonPlaneGeometry.attributes.uv); 
-//               instancedPlaneGeometry.addAttribute('normal', singletonPlaneGeometry.attributes.normal); 
-//               instancedPlaneGeometry.addAttribute('position', singletonPlaneGeometry.attributes.position); 
-//               instancedPlaneGeometry.setIndex(singletonPlaneGeometry.index); 
-
-//             }
-            
-//             planeMath.setFromCoplanarPoints(p1, p2, p3); 
-
-//             cross.crossVectors( 
-//               (new THREE.Vector3()).subVectors(p3, p1).normalize(), 
-//               planeMath.normal 
-//             )
-//             .normalize(); 
-            
-//             if (cross.z > 0) {
-//               cross.negate();
-//             }
-//             v0.copy(cross).multiplyScalar(this.planeHeight); 
-//             v1.copy(v0).multiplyScalar(.5); 
-//             v2.lerpVectors(p1, p3, .5); 
-//             center.addVectors(v2, v1); 
-//             v4.addVectors(p3, v0); 
-//             v5.addVectors(p1, v0); 
-
-//             endVertices = [p1, p3, v4, v5];
-
-//             let transform = this.transforms[i]; 
-//             transform.identity();  
-
-//             // q1 rotates plane so we are orthogonal to target planar surface 
-//             q1.setFromUnitVectors(unitZ, planeMath.normal); 
-
-//             /*
-//             1. rotate so we are orthogonal to the target planar surface 
-//             2. translate so plane is centered on correct point 
-//             */
-//             transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
-//             transform.multiply(mat4.makeRotationFromQuaternion(q1)); 
-
-//             q2.setFromUnitVectors(
-//               v0
-//                 .set(
-//                   singletonPlaneGeometry.attributes.position.array[sind * 3 + 0],
-//                   singletonPlaneGeometry.attributes.position.array[sind * 3 + 1],
-//                   singletonPlaneGeometry.attributes.position.array[sind * 3 + 2]
-//                 )
-//                 .applyMatrix4(transform)
-//                 .sub(center)
-//                 .normalize(), 
-//               v1.subVectors(endVertices[eind], center)
-//                 .normalize()
-//             ); 
-
-//             transform.identity(); 
-//             transform.multiply(mat4.makeTranslation(center.x, center.y, center.z)); 
-//             transform.multiply(mat4.makeRotationFromQuaternion(q1.premultiply(q2))); 
-              
-//           }
-
-//         }; 
-
-//         let renderPlanes = () => {
-
-//           let instanceI = 0;  
-
-//           for (let i = 0; i < this.numAngularSteps; i++) {   
-
-//             // Compute position for ith angular step 
-//             let centroid = CentroidComputer.computeGeometricCentroid(singletonPlaneGeometry).applyMatrix4(this.transforms[i]); 
-
-//             // Compute the rotation for the ith angular step 
-//             q1.setFromRotationMatrix(this.transforms[i]); 
-
-//             let zistep = i * this.spiralSpacing;
-//             let zjstep = -this.uniformZSpacing;  
-
-//             for (let j = 0; j < this.numObjectsPerAngle; j++) {
-
-//               zjstep += this.uniformZSpacing; 
-//               let z = zistep + zjstep; 
-
-//               offsetAttribute.setXYZ(instanceI, centroid.x, centroid.y, z); 
-//               orientationAttribute.setXYZW(instanceI, q1.x, q1.y, q1.z, q1.w); 
-
-//               instanceI += 1; 
-
-//             }
-
-//           }
-
-//           offsetsHideAfterIndex(instanceI);        
-          
-//           offsetAttribute.needsUpdate = true; 
-//           orientationAttribute.needsUpdate = true; 
-
-//           let mesh = new THREE.Mesh( instancedPlaneGeometry, rawMaterial ); 
-
-//           mesh.frustumCulled = false; 
-
-//           scene.add( mesh ); 
-
-//         }
-
-//         computeTransforms();
-//         renderPlanes(); 
-
-//       }
-  
-//       //Set the initial position of the camera 
-//       let cameraX = origin.x; 
-//       let cameraY = origin.y; 
-//       let cameraZ = origin.z; 
-  
-//       camera.position.set(cameraX, cameraY, cameraZ - 12);
-//       camera.lookAt(0, 0, 0);     
+//     this.start = () => {   
   
 //       let animate = (time) => {
 //         requestAnimationFrame( animate );
@@ -522,25 +138,25 @@ export default SpiralizationEngine;
   
 //       animate();
 
-      // let cend = configs['one']; 
-      // delete cend['glide']; 
-      // delete cend['rotate']; 
-      // delete cend['cameraPos'];
+//       let cend = configs['one']; 
+//       delete cend['glide']; 
+//       delete cend['rotate']; 
+//       delete cend['cameraPos'];
 
-      // let tweenKeys = Object.keys(cend); 
+//       let tweenKeys = Object.keys(cend); 
 
-      // let cstart = {}; 
-      // for (let k of tweenKeys) { 
-      //   cstart[k] = this[k]; 
-      // }
+//       let cstart = {}; 
+//       for (let k of tweenKeys) { 
+//         cstart[k] = this[k]; 
+//       }
 
-      // new TWEEN.Tween(cstart) // Create a new tween that modifies 'coords'.
-      //   .to(cend, 2000) // Move to (300, 200) in 1 second.
-      //   .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
-      //   .onUpdate(() => { // Called after tween.js updates 'coords'.
-      //       this.fullReRender(cstart); 
-      //   })
-      //   .start(); // Start the tween immediately.
+//       new TWEEN.Tween(cstart) // Create a new tween that modifies 'coords'.
+//         .to(cend, 2000) // Move to (300, 200) in 1 second.
+//         .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
+//         .onUpdate(() => { // Called after tween.js updates 'coords'.
+//             this.fullReRender(cstart); 
+//         })
+//         .start(); // Start the tween immediately.
 
 //     }
 

@@ -7,11 +7,15 @@ export default function Circle(radius,
 
 let circle = {}; 
 
-circle.tracer = new THREE.Vector3(); 
+circle.tracer   = new THREE.Vector3(); 
 circle.geometry = new THREE.CircleGeometry( radius, 30 ); 
 circle.material = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
 
 circle.pos = function(radians) {
+    /*
+    Get the coordinate of a point on the edge of the circle relative to 
+    some rotational angular offset. 
+    */ 
     this.tracer.copy(raxis); 
     this.tracer.applyAxisAngle(caxis, radians); 
     this.tracer.multiplyScalar(radius); 
@@ -19,13 +23,16 @@ circle.pos = function(radians) {
     return (new THREE.Vector3()).copy(this.tracer);  
 };
 
-circle.render = function(scene) {
-    let { geometry, material } = this;
-    let mesh = new THREE.Mesh( geometry, material );
-    let { x, y, z } = pos; 
-    mesh.position.set(x, y, z); 
-    scene.add(mesh); 
-}; 
+// circle.render = function(scene) {
+//     /*
+
+//     */ 
+//     let { geometry, material } = this;
+//     let mesh = new THREE.Mesh( geometry, material );
+//     let { x, y, z } = pos; 
+//     mesh.position.set(x, y, z); 
+//     scene.add(mesh); 
+// }; 
 
 return circle; 
 

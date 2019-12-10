@@ -24,14 +24,8 @@ function App() {
 
     async function startEngine() {
 
-      // let engine = new MeshDeformation(threejsContainer.current); 
-      // engine.start(); 
-      // setInitialized(true); 
-      // setEngine(engine); 
-
       let engine = new SpiralizationEngine(threejsContainer.current);
       engine.start(); 
-      // engine.enableGuiControls(); 
 
       setInitialized(true); 
       setEngine(engine); 
@@ -78,6 +72,7 @@ function App() {
         </Select>
       </Header>
       <Content>
+        <script/>
         <div ref={threejsContainer}/>
       </Content>
     </Layout>

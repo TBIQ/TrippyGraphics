@@ -64,6 +64,8 @@ class ObjectModel {
 
     }
 
+    static keys = Object.keys(ObjectModel.defaultState) 
+
     constructor(scene) {
 
         // threejs objects that contain physical objects to render 
@@ -78,6 +80,8 @@ class ObjectModel {
         this.initializeRenderer(); 
 
     }
+
+
 
     setToDefault() {
         this.applyConfig(ObjectModel.defaultState); 
@@ -95,6 +99,13 @@ class ObjectModel {
 
     get angularIndicesToRender() {
         return _.range(0, this.numAngularSteps); 
+    }
+
+    clearScene() {
+        // Remove all items from scene 
+        while (this.scene.children.length > 0) { 
+          this.scene.remove(this.scene.children[0]); 
+        }
     }
 
     initializeRenderer() {
