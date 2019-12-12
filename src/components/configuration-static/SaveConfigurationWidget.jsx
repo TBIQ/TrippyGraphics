@@ -1,5 +1,6 @@
-import React, { useEffect } from "react"; 
+import React, { useEffect, useState } from "react"; 
 import { Row, Col, Input, Form, Button } from "antd"; 
+import { useRootContext } from "../../context/context"; 
 
 function hasErrors(fieldsError) {
     return Object.keys(fieldsError).some(field => fieldsError[field]);
@@ -11,6 +12,15 @@ function SaveConfigurationWidget(props) {
     Allow user to name and save current static configuration
     */
     const { form } = props; 
+    const { state, dispatch } = useRootContext(); 
+    const { configs } = state; 
+    const [firstRender, setFirstRender] = useState(true); 
+    const configKeys = Object.keys(configs); 
+
+    useEffect(() => {
+        // indicate first render has occurred 
+        setFirstRender(true); 
+    }, []); 
 
     useEffect(() => {
         // Disable submit at the beginning as user has not yet entered input
@@ -22,10 +32,19 @@ function SaveConfigurationWidget(props) {
         form.validateFields((err, values) => {
             let formIsValid = !err; 
             if (formIsValid) {
-                console.log('Received values of form: ', values);
+                let { name } = values; 
+                // TODO: dispatch creation of new confguration here 
             }
         });
     };
+
+    let validateNewConfigName = (rule, value, callback) => {
+        if (configKeys.includes(value)) {
+            callback("Enter an unused name"); 
+        } else {
+            callback(); 
+        }
+      };
 
     // Only show error after a field is touched.
     const configNameError = form.isFieldTouched('name') && form.getFieldError('name');
@@ -41,7 +60,10 @@ function SaveConfigurationWidget(props) {
                     help={configNameError || ''}
                     >
                         {form.getFieldDecorator('name', {
-                            rules: [{ required: true, message: 'Enter an unused and non-empty name!' }],
+                            rules: [
+                                { required: true, message: 'Enter a non-empty name' }, 
+                                { validator: validateNewConfigName }
+                            ],
                         })(
                             <Input 
                             style={{ width: 250 }}
@@ -57,7 +79,8 @@ function SaveConfigurationWidget(props) {
                         <Button 
                         type="primary" 
                         htmlType="submit" 
-                        disabled={hasErrors(form.getFieldsError())}
+                        ghost 
+                        disabled={firstRender || hasErrors(form.getFieldsError())}
                         >
                             Save
                         </Button>

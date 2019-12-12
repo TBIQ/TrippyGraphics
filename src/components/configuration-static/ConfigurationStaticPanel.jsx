@@ -1,5 +1,6 @@
 import React from "react"; 
 import { Collapse } from "antd"; 
+import LoadConfigurationWidget from "./LoadConfigurationWidget"; 
 import SaveConfigurationWidget from "./SaveConfigurationWidget"; 
 
 const { Panel } = Collapse; 
@@ -12,7 +13,7 @@ function ConfigurationStaticPanel(props) {
                 <SaveConfigurationWidget/>
             </Panel>
             <Panel header="Load Configuration" key="config-load">
-                <p>stuff</p>
+                <LoadConfigurationWidget/>
             </Panel>
         </Collapse>
     ); 

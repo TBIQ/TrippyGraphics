@@ -8,8 +8,11 @@ export function reducer(state, [type, payload]) {
 
     switch (type) {
 
-        case 'SET THING': 
-            return { ...state, payload }; 
+        case 'SET CONFIGS': 
+            return { ...state, configs: payload }; 
+
+        case 'SET VIEW LAYOUT':
+            return { ...state, layoutMode: payload }; 
             
     }
 

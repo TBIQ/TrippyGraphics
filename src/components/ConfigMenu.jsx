@@ -1,6 +1,7 @@
 import React from "react"; 
 import { Tabs } from "antd"; 
 import ConfigurationStaticPanel from "./configuration-static/ConfigurationStaticPanel"; 
+import ConfigurationLayoutPanel from "./configuration-layout/ConfigurationLayoutPanel"; 
 
 const { TabPane } = Tabs; 
 
@@ -15,7 +16,7 @@ function ConfigMenu(props) {
                 Content of Tab Pane 2
             </TabPane>
             <TabPane tab="Layout" key="3">
-                Content of Tab Pane 3
+                <ConfigurationLayoutPanel/>
             </TabPane>
         </Tabs>
     ); 
