@@ -1,83 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import SpiralizationEngine from "./threejs/SpiralizationEngine"; 
-// import MeshDeformation from "./threejs/MeshDeformation"; 
-import configs from "./threejs/SpiralizationEngineConfigurations"; 
-import _ from "lodash"; 
-import { Select, Layout } from 'antd'; 
+import React, { useReducer } from "react"; 
+import { RootProvider } from "./context/context"; 
+import AppContent from "./AppContent"; 
+import { reducer, reducerInitialState } from "./reducers/reducer"; 
 
-import './App.css';
-import 'antd/dist/antd.css';
+function App(props) {
 
-const { Option } = Select; 
-const { Header, Content } = Layout; 
+    const [state, dispatch] = useReducer(reducer, reducerInitialState); 
 
-function App() {
-
-  const threejsContainer = useRef(null); 
-
-  const [initialized, setInitialized] = useState(false);
-  const [configNames, setConfigNames] = useState([]); 
-  const [selectedConfig, setSelectedConfig] = useState(null); 
-  const [engine, setEngine] = useState(null); 
-
-  useEffect(() => {
-
-    async function startEngine() {
-
-      let engine = new SpiralizationEngine(threejsContainer.current);
-      engine.start(); 
-
-      setInitialized(true); 
-      setEngine(engine); 
-
-    }
-
-    if (threejsContainer.current && !initialized) {
-      startEngine(); 
-    }
-
-  }, [threejsContainer]);
-
-  useState(() => {
-
-    // Get the names of all pre-configured presets 
-    setConfigNames(Object.keys(configs));
-
-  }, []);
-
-  useEffect(() => {
-
-    if (selectedConfig && initialized) {
-      let config = configs[selectedConfig]; 
-      engine.fullReRender(config); 
-    }
-
-
-  }, [selectedConfig, initialized]); 
-
-  return (
-    <Layout>
-      <Header style={{ padding: '0 15px', borderBottom: '1px solid #e6e6e6', height: 60 }}>
-        <h3 style={{ display: 'inline', color: '#fff', marginRight: 5 }}>Presets: </h3>
-        <Select
-        defaultValue={selectedConfig}
-        allowClear
-        style={{ width: 200 }}
-        placeholder={'Select a configuration'}
-        onChange={(value) => setSelectedConfig(value)}
-        >
-          {configNames.map(name => 
-            <Option value={name}>{name}</Option>
-          )}
-        </Select>
-      </Header>
-      <Content>
-        <script/>
-        <div ref={threejsContainer}/>
-      </Content>
-    </Layout>
-  );
+    return (
+        <RootProvider value={{ state, dispatch }}>
+            <AppContent/>
+        </RootProvider>
+    ); 
 
 }
 
-export default App;
+export default App; 
