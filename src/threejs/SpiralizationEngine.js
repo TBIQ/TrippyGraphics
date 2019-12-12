@@ -28,6 +28,15 @@ class SpiralizationEngine {
 
   }
 
+  resize(width, height) {
+
+    this.camera.aspect = width / height; 
+    this.camera.updateProjectionMatrix();
+
+    this.renderer.setSize( width, height );
+
+  }
+
   interpolate(cend=configs['one']) {
     /*
     Interpolate from the current configuration to some target configuration 
@@ -76,6 +85,8 @@ class SpiralizationEngine {
     this.interpolate(configs['one']);
 
   }
+
+  
 
 }
 

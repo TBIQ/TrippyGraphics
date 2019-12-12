@@ -8,7 +8,7 @@ function ConfigOptions(props) {
     const [shown, setShown] = useState(false); 
 
     return (
-        <div style={{ height: 0 }}>
+        <div style={{ height: 0, position: 'absolute', zIndex: 1 }}>
 
             {/* Button which toggles visibility of drawer pullout */}
             <Button 

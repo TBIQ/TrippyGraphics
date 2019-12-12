@@ -10,7 +10,6 @@ const useEventListener = (eventName, handler, element = global) => {
 
   useEffect(
     () => {
-      debugger; 
       const isSupported = element && element.addEventListener;
       if (!isSupported) return;
 
