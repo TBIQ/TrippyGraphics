@@ -53,17 +53,66 @@ function ViewManager(props) {
 
     // Ensure the underlying engines are aware of current width / height of container 
     const { width, height } = windowDimensions;
+    let staticHeight = 0, animationHeight = 0; 
+    let staticTop = 0, animationTop = 0; 
     if (initialized) {
-        staticEngine.resize(width, height/2); 
-        animationEngine.resize(width, height/2); 
+        switch (layoutMode) {
+            case 'full': 
+                // one view takes up the full screen 
+                switch (singleViewMode) {
+                    case "static": 
+                        // static view takes up whole screen 
+                        staticHeight = height; 
+                        break; 
+                    case "animation": 
+                        // animation view takes up whole screen 
+                        animationHeight = height; 
+                        break;
+                    default: 
+                        throw Error("Unknown single view mode in ViewManager component"); 
+                }
+                break; 
+            case 'split': 
+                // views are shown in split screen 
+                staticHeight = height/2; 
+                animationHeight = height/2; 
+                switch (splitViewOrder) {
+                    case "static": 
+                        // static view is on top, animation view on bottom 
+                        animationTop = height/2;
+                        break;  
+                    case "animation": 
+                        // animation view is on top, static view on bottom 
+                        staticTop = height/2; 
+                        break; 
+                    default: 
+                        throw Error("Unknown split view order in ViewManager component"); 
+                }
+                break; 
+            default: 
+                throw Error("Unknown layout mode in ViewManger component"); 
+        }
+
+        staticEngine.resize(width, staticHeight); 
+        animationEngine.resize(width, animationHeight); 
+
     }
 
-    return (
-        <React.Fragment>
-            <div ref={staticContainer} style={{ position: 'absolute' }}/>
-            <div ref={animationContainer} style={{ position: 'absolute', top: height/2 }}/>
-        </React.Fragment>
+    const StaticView = (
+        <div style={{ position: 'absolute', top: staticTop, height: staticHeight }}>
+            <h4 style={{ position: "absolute", right: 10, top: 10, color: '#fff', zIndex: 1, display: staticHeight > 0 ? 'block' : 'none' }}>Static</h4>
+            <div ref={staticContainer}/>
+        </div>
     ); 
+
+    const AnimationView = (
+        <div style={{ position: 'absolute', top: animationTop, height: animationHeight }}>
+            <h4 style={{ position: "absolute", right: 10, top: 10, color: '#fff', zIndex: 1, display: animationHeight > 0 ? 'block' : 'none' }}>Animation</h4>
+            <div ref={animationContainer}/>
+        </div>
+    ); 
+
+    return <div>{StaticView}{AnimationView}</div>;
     
 }
 

@@ -8,14 +8,17 @@ const { Panel } = Collapse;
 function ConfigurationStaticPanel(props) {
 
     return (
-        <Collapse defaultActiveKey={[]}>
-            <Panel header="Save Current Configuration" key="config-save">
-                <SaveConfigurationWidget/>
-            </Panel>
-            <Panel header="Load Configuration" key="config-load">
-                <LoadConfigurationWidget/>
-            </Panel>
-        </Collapse>
+        <div>
+            <h3>Save / Load From Static View</h3>
+            <Collapse defaultActiveKey={[]}>
+                <Panel header="Save Current Configuration" key="config-save">
+                    <SaveConfigurationWidget/>
+                </Panel>
+                <Panel header="Load Configuration" key="config-load">
+                    <LoadConfigurationWidget/>
+                </Panel>
+            </Collapse>
+        </div>
     ); 
 
 }
