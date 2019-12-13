@@ -167,25 +167,6 @@ export default SpiralizationEngine;
   
 //       animate();
 
-//       let cend = configs['one']; 
-//       delete cend['glide']; 
-//       delete cend['rotate']; 
-//       delete cend['cameraPos'];
-
-//       let tweenKeys = Object.keys(cend); 
-
-//       let cstart = {}; 
-//       for (let k of tweenKeys) { 
-//         cstart[k] = this[k]; 
-//       }
-
-//       new TWEEN.Tween(cstart) // Create a new tween that modifies 'coords'.
-//         .to(cend, 2000) // Move to (300, 200) in 1 second.
-//         .easing(TWEEN.Easing.Quadratic.Out) // Use an easing function to make the animation smooth.
-//         .onUpdate(() => { // Called after tween.js updates 'coords'.
-//             this.fullReRender(cstart); 
-//         })
-//         .start(); // Start the tween immediately.
 
 //     }
 
