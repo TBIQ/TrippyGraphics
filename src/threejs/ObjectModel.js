@@ -143,27 +143,19 @@ class ObjectModel {
         let offsetAttribute = new THREE.InstancedBufferAttribute( new Float32Array(offsets), 3 ).setDynamic( true );
         let orientationAttribute = new THREE.InstancedBufferAttribute( new Float32Array(orientations), 4 ).setDynamic( true );      
 
-        for (let i = 0; i < ObjectModel.MAX_NUM_INSTANCES; i++) {
-            offsetAttribute.setXYZ(i, ObjectModel.HIDE_POS.x, ObjectModel.HIDE_POS.y, ObjectModel.HIDE_POS.z);
+        let clearAttributes = () => {
+            for (let i = 0; i < ObjectModel.MAX_NUM_INSTANCES; i++) {
+                offsetAttribute.setXYZ(i, ObjectModel.HIDE_POS.x, ObjectModel.HIDE_POS.y, ObjectModel.HIDE_POS.z);
+            }
         }
 
         instancedPlaneGeometry.addAttribute('offset', offsetAttribute); 
         instancedPlaneGeometry.addAttribute('orientation', orientationAttribute);
 
-        let offsetsHideAfterIndex = (j) => {
-            while ( j < this.MAX_NUM_INSTANCES ) {
-                // early stopping 
-                if (offsetAttribute.array[j] === ObjectModel.HIDE_POS.x && 
-                    offsetAttribute.array[j+1] === ObjectModel.HIDE_POS.y && 
-                    offsetAttribute.array[j+2] === ObjectModel.HIDE_POS.z) {
-                    break; 
-                }
-                offsetAttribute.setXYZ(j++, ObjectModel.HIDE_POS.x, ObjectModel.HIDE_POS.y, ObjectModel.HIDE_POS.z); 
-            }
-        }
-
         // render function has access to context that contains all resources used for computing and performing transforms 
         this.render = () => {
+
+            clearAttributes(); 
 
             // 3 conical slices 
             let cNear = new Circle(this.radius * this.focalDilationFrontNear,
@@ -271,19 +263,19 @@ class ObjectModel {
 
                     for (let j = 0; j < this.numObjectsPerAngle; j++) {
 
-                    zjstep += this.uniformZSpacing; 
-                    let z = zistep + zjstep; 
+                        zjstep += this.uniformZSpacing; 
+                        let z = zistep + zjstep; 
 
-                    offsetAttribute.setXYZ(instanceI, centroid.x, centroid.y, z); 
-                    orientationAttribute.setXYZW(instanceI, q1.x, q1.y, q1.z, q1.w); 
+                        offsetAttribute.setXYZ(instanceI, centroid.x, centroid.y, z); 
+                        orientationAttribute.setXYZW(instanceI, q1.x, q1.y, q1.z, q1.w); 
 
-                    instanceI += 1; 
+                        instanceI += 1; 
 
                     }
 
                 }
 
-                offsetsHideAfterIndex(instanceI);        
+                // offsetsHideAfterIndex(instanceI);        
                 
                 offsetAttribute.needsUpdate = true; 
                 orientationAttribute.needsUpdate = true; 

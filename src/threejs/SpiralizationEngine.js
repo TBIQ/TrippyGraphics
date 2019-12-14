@@ -58,6 +58,9 @@ class SpiralizationEngine {
         ]),
         new AnimationGroup([
           new Animation(this.objectModel, configs['five'], 2000)
+        ]),
+        new AnimationGroup([
+          new Animation(this.objectModel, configs['six'], 2000)
         ])
       ])
     )
