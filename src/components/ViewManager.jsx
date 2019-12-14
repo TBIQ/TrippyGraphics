@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from "react"; 
 import { useRootContext } from "../context/context";
 import SpiralizationEngine from "../threejs/SpiralizationEngine"; 
-import AnimateHeight from 'react-animate-height';
 import useEventListener from "../hooks/useEventListener"; 
 
 function ViewManager(props) {
@@ -10,11 +9,9 @@ function ViewManager(props) {
     const animationContainer = useRef(null); 
 
     const { state, dispatch } = useRootContext(); 
-    const { layoutMode, singleViewMode, splitViewOrder } = state; 
+    const { layoutMode, singleViewMode, splitViewOrder, staticEngine, animationEngine } = state; 
     const [initialized, setInitialized] = useState(false);
     const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
-    const [staticEngine, setStaticEngine] = useState(false); 
-    const [animationEngine, setAnimationEngine] = useState(false);  
 
     let updateDimensions = () => {
         let width = window.innerWidth; 
@@ -43,8 +40,9 @@ function ViewManager(props) {
             let newAnimationEngine = new SpiralizationEngine(animationContainer.current); 
             newStaticEngine.start(); 
             newAnimationEngine.start(); 
-            setStaticEngine(newStaticEngine); 
-            setAnimationEngine(newAnimationEngine); 
+            newAnimationEngine.animate(); 
+            dispatch(['SET STATIC ENGINE', newStaticEngine]); 
+            dispatch(['SET ANIMATION ENGINE', newAnimationEngine]); 
             setInitialized(true); 
             updateDimensions(); 
         }

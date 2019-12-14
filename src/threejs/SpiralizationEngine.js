@@ -82,11 +82,19 @@ class SpiralizationEngine {
 
     animate(); 
     
-    this.interpolate(configs['one']);
+    
 
   }
 
-  
+  animate() {
+    this.interpolate(configs['one']);
+  }
+
+  applyConfig(config) {
+    this.objectModel.applyConfig(config);
+    this.objectModel.clearScene(); 
+    this.objectModel.render(); 
+  }
 
 }
 

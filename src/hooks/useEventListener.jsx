@@ -21,6 +21,7 @@ const useEventListener = (eventName, handler, element = global) => {
     },
     [eventName, element]
   );
+  
 };
 
 export default useEventListener;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react"; 
 import { SketchPicker } from 'react-color';
 import _ from "lodash"; 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import "../../css/ParameterColorWidget.css";
 
 const styles = {
@@ -53,7 +55,9 @@ function ParameterColorWidget(props) {
 
             {/* Add a button for adding new colors to palette */}
             <div style={ styles.swatch } onClick={ handleAdd }>
-                <div style={ styles.color } />
+                <div>
+                    <FontAwesomeIcon style={{ height: 15, width: 15 }} icon={faPlus}/>
+                </div>
             </div>
             
             {/* Color picking widget optionally shown */}

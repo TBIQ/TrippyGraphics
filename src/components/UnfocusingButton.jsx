@@ -7,7 +7,7 @@ function UnfocusingButton(props) {
     A button that unfocuses after a specified duration of time 
     */ 
 
-    const { msecs, label } = props; 
+    const { msecs, label, onClick, id } = props; 
     const ref = useRef(null); 
 
     useEffect(() => {
@@ -23,7 +23,7 @@ function UnfocusingButton(props) {
 
     }, [ref]); 
 
-    return <Button ref={ref} ghost type="primary">{label}</Button>; 
+    return <Button ref={ref} ghost type="primary" onClick={e => onClick(id)}>{label}</Button>; 
 
 }; 
 
