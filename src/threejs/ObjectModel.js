@@ -12,6 +12,57 @@ class ObjectModel {
     static MAX_NUM_INSTANCES        = 24 * 1000; 
     static HIDE_POS                 = new THREE.Vector3(-1000,-1000,-1000);
 
+    static numericProperties = [
+        {
+          field: 'radius', 
+          min: .1, 
+          max: 10, 
+          step: .5
+        }, 
+        {
+          field: 'lensWidthFar', 
+          min: 0, 
+          max: 10, 
+          step: .1
+        }, 
+        {
+          field: 'lensWidthNear', 
+          min: 0, 
+          max: 10, 
+          step: .1
+        }, 
+        {
+          field: 'focalDilationFrontNear', 
+          min: .01, 
+          max: 1, 
+          step: .01
+        }, 
+        {
+          field: 'focalDilationFrontFar', 
+          min: .01, 
+          max: 1, 
+          step: .01
+        }, 
+        {
+          field: 'lensAngularStep', 
+          min: 0, 
+          max: Math.PI * 2, 
+          step: Math.PI * 2 / 100 
+        }, 
+        {
+          field: 'planeHeight', 
+          min: .5, 
+          max: 8, 
+          step: .125
+        },
+        {
+          field: 'numAngularSteps', 
+          min: 1, 
+          max: 24, 
+          step: Math.PI * 2 / 100 
+        }
+      ]
+
     // Default object model configuration
     static defaultState = {
 

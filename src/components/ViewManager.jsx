@@ -9,7 +9,7 @@ function ViewManager(props) {
     const animationContainer = useRef(null); 
 
     const { state, dispatch } = useRootContext(); 
-    const { layoutMode, singleViewMode, splitViewOrder, staticEngine, animationEngine } = state; 
+    const { layoutMode, singleViewMode, splitViewOrder, engines } = state; 
     const [initialized, setInitialized] = useState(false);
     const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
 
@@ -41,8 +41,8 @@ function ViewManager(props) {
             newStaticEngine.start(); 
             newAnimationEngine.start(); 
             newAnimationEngine.animate(); 
-            dispatch(['SET STATIC ENGINE', newStaticEngine]); 
-            dispatch(['SET ANIMATION ENGINE', newAnimationEngine]); 
+            dispatch(['REGISTER ENGINE', { id: 'static', engine: newStaticEngine }]); 
+            dispatch(['REGISTER ENGINE', { id: 'animation', engine: newAnimationEngine }]); 
             setInitialized(true); 
             updateDimensions(); 
         }
@@ -91,8 +91,8 @@ function ViewManager(props) {
                 throw Error("Unknown layout mode in ViewManger component"); 
         }
 
-        staticEngine.resize(width, staticHeight); 
-        animationEngine.resize(width, animationHeight); 
+        engines['static'].resize(width, staticHeight); 
+        engines['animation'].resize(width, animationHeight); 
 
     }
 

@@ -143,6 +143,10 @@ export default SpiralizationEngine;
 //         gui.add(this, 'glide').listen(); 
 //         gui.add(this, 'forward');
     
+
+
+
+
 //         let c1 = gui.add(this, 'radius', .1, 10).step(.5).listen();
 //         let c2 = gui.add(this, 'lensWidthFar', 0, 10).step(.1).listen();
 //         let c3 = gui.add(this, 'lensWidthNear', 0, 10).step(.1).listen();

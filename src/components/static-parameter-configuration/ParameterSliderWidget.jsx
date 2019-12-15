@@ -3,9 +3,7 @@ import { Slider, Row, Col } from "antd";
 
 function ParameterSliderWidget(props) {
 
-    const { name, min, max, step, initValue } = props;
-    const [value, setValue] = useState(initValue); 
-    let updateValue = value => setValue(value); 
+    const { name, min, max, step, value, onChange } = props;
 
     return (
         <Row type="flex" justify="space-around" align="middle">
@@ -21,7 +19,7 @@ function ParameterSliderWidget(props) {
                 min={min}
                 max={max}
                 step={step}
-                onChange={updateValue}
+                onChange={onChange}
                 />
             </Col>
         </Row>

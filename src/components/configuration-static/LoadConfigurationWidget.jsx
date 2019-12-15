@@ -10,7 +10,7 @@ function LoadConfigurationWidget(props) {
     const { configs } = state; 
     const ids = Object.keys(configs); 
     const loadConfig = id => {
-        dispatch(['SET STATIC CONFIG', configs[id]]); 
+        dispatch(['SET ENGINE CONFIG', { id: 'static', config: configs[id] }])
     }
 
     return <LoadListWidget ids={ids} icon={faCode} onClick={loadConfig}/>;

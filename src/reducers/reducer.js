@@ -2,46 +2,58 @@ import _ from "lodash";
 
 export const reducerInitialState = {
 
-    // Properties governing view layout for application 
+
     layoutMode: 'split',        // can either be 'split' or 'full' 
     singleViewMode: 'static',   // can either be 'static' or 'animation' 
     splitViewOrder: 'static',   // can either be 'static' or 'animation' 
 
-    staticEngine: null,         // engine for static view 
-    animationEngine: null,      // engine for animation view 
-    configs: null,              // object mapping config names to configs
-    staticConfig: null          // current config object to apply to static engine
+    staticConfig: null,         // config currently applied to static engine
+    configs: {},                // map of id to a saved configuration 
+    engines: {},                // map of id to an engine   
+    engineConfigs: {}           // map of id to a config that should be applied to an engine
 
 };
 
 export function reducer(state, [type, payload]) {
 
-    switch (type) {
+    const mutators = { 
 
-        case 'SET CONFIGS': 
-            return { ...state, configs: payload }; break; 
+        'SET CONFIGS': () => {
+            return { ...state, configs: payload };  
+        },
 
-        case 'SET VIEW LAYOUT':
-            return { ...state, layoutMode: payload }; break; 
-            
-        case 'SET SINGLE VIEW MODE':
-            return { ...state, singleViewMode: payload }; break; 
+        'SET VIEW LAYOUT': () => {
+            return { ...state, layoutMode: payload };  
+        },
 
-        case 'SET SPLIT VIEW ORDER': 
-            return { ...state, splitViewOrder: payload }; break; 
+        'SET SINGLE VIEW MODE': () => {
+            return { ...state, singleViewMode: payload };  
+        },
 
-        case 'SET STATIC ENGINE': 
-            return { ...state, staticEngine: payload }; break; 
+        'SET SPLIT VIEW ORDER': () => {
+            return { ...state, splitViewOrder: payload };   
+        },
 
-        case 'SET ANIMATION ENGINE': 
-            return { ...state, animationEngine: payload }; break; 
+        'SET STATIC CONFIG': () => {
+            return { ...state, staticConfig: payload }; 
+        }, 
 
-        case 'SET STATIC CONFIG': 
-            return { ...state, staticConfig: payload }; break; 
+        'REGISTER ENGINE': () => {
+            let { id, engine } = payload; 
+            let engines = Object.assign({}, state.engines); 
+            engines[id] = engine; 
+            return { ...state, engines }; 
+        },
 
-        default: 
-            debugger; 
-        
-    }
+        'SET ENGINE CONFIG': () => {
+            let { id, config } = payload; 
+            let engineConfigs = {}; 
+            engineConfigs[id] = config; 
+            return { ...state, engineConfigs };
+        }, 
+
+    }; 
+
+    return mutators[type](); 
 
 }

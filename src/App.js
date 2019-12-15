@@ -1,7 +1,6 @@
 import React, { useReducer } from "react"; 
 import { RootProvider } from "./context/context"; 
 import AppContent from "./components/AppContent.jsx"; 
-import LocalDatabase from "./persistent/LocalDatabase"; 
 import { reducer, reducerInitialState } from "./reducers/reducer"; 
 
 import './css/App.css';
@@ -13,7 +12,6 @@ function App(props) {
 
     return (
         <RootProvider value={{ state, dispatch }}>
-            <LocalDatabase/>
             <AppContent/>
         </RootProvider>
     ); 
