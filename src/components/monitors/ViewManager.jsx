@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react"; 
-import { useRootContext } from "../context/context";
-import SpiralizationEngine from "../threejs/SpiralizationEngine"; 
-import useEventListener from "../hooks/useEventListener"; 
+import { useRootContext } from "../../context/context";
+import SpiralizationEngine from "../../threejs/SpiralizationEngine"; 
+import useEventListener from "../../hooks/useEventListener"; 
 
 function ViewManager(props) {
 

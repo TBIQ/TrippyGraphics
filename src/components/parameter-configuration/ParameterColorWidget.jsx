@@ -7,12 +7,12 @@ import "../../css/ParameterColorWidget.css";
 
 const styles = {
     'color': {
-        width: '36px',
-        height: '14px',
+        width: '20px',
+        height: '20px',
         borderRadius: '2px'
     },
     'swatch': {
-        padding: '5px',
+        padding: '3px',
         background: '#fff',
         borderRadius: '1px',
         boxShadow: '0 0 0 1px rgba(0,0,0,.1)',

@@ -1,7 +1,7 @@
 import React, { useState } from "react"; 
 import { Button, Drawer, Tabs, Form, Row, Col, Input, Collapse } from "antd"; 
-import ConfigMenu from "./ConfigMenu";  
-import "../css/ConfigPanel.css";
+import ConfigTabs from "./ConfigTabs"; 
+import "../../css/ConfigPanel.css";
 
 function ConfigOptions(props) {
 
@@ -26,7 +26,7 @@ function ConfigOptions(props) {
             onClose={() => setShown(false)}
             visible={shown}
             >
-                <ConfigMenu/>
+                <ConfigTabs/>
             </Drawer>
 
         </div>

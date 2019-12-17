@@ -1,7 +1,7 @@
 import React from 'react';
-import ConfigOptions from "./ConfigOptions"; 
-import ViewManager from "./ViewManager"; 
-import EngineManager from "./EngineManager";  
+import ConfigOptions from "./configuration/ConfigOptions"; 
+import ViewManager   from "./monitors/ViewManager"; 
+import EngineManager from "./monitors/EngineManager";  
 import LocalDatabase from "../persistent/LocalDatabase"; 
 
 function AppContent(props) {

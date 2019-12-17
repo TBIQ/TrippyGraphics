@@ -1,10 +1,10 @@
 import React, { useRef, useEffect } from "react"; 
 import { List, Row, Col, Button } from "antd"; 
-import { useRootContext } from "../context/context"; 
+import { useRootContext } from "../../context/context"; 
 import InfiniteScroll from 'react-infinite-scroller';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import UnfocusingButton from "./UnfocusingButton"; 
-import "../css/LoadConfigurationWidget.css"; 
+import "../../css/LoadConfigurationWidget.css"; 
 
 function LoadListWidget(props) {
 

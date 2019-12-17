@@ -1,14 +1,12 @@
 import React from "react"; 
 import { Tabs } from "antd"; 
-import ConfigurationStaticPanel from "./configuration-static/ConfigurationStaticPanel"; 
-import ConfigurationLayoutPanel from "./configuration-layout/ConfigurationLayoutPanel"; 
-
-// import ParameterSliderWidget from "./static-parameter-configuration/ParameterSliderWidget"
-// import ParameterColorWidget from "./static-parameter-configuration/ParameterColorWidget"; 
+import ConfigurationStaticPanel from "../configuration-static/ConfigurationStaticPanel"; 
+import ConfigurationLayoutPanel from "../configuration-layout/ConfigurationLayoutPanel"; 
+import ConfigurationColorsPanel from "../configuration-colors/ConfigurationColorsPanel"; 
 
 const { TabPane } = Tabs; 
 
-function ConfigMenu(props) {
+function ConfigTabs(props) {
 
     return (
         <Tabs onChange={() => false} type="card" animated>
@@ -21,9 +19,12 @@ function ConfigMenu(props) {
             <TabPane tab="Layout" key="3">
                 <ConfigurationLayoutPanel/>
             </TabPane>
+            <TabPane tab="Colors" key="4">
+                <ConfigurationColorsPanel/>
+            </TabPane>
         </Tabs>
     ); 
 
 }
 
-export default ConfigMenu; 
+export default ConfigTabs; 

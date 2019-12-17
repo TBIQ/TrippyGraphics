@@ -1,4 +1,4 @@
-const configs = {
+const objectConfigs = {
 
     'one': {
 
@@ -118,4 +118,4 @@ const configs = {
 
 };
 
-export default configs; 
+export default objectConfigs; 

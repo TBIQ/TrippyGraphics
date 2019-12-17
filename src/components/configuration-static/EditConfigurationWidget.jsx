@@ -1,23 +1,24 @@
-import React, { useRef, useEffect } from "react"; 
+import React from "react"; 
 import { Row, Col } from "antd"; 
 import { useRootContext } from "../../context/context"; 
 import ObjectModel from "../../threejs/ObjectModel"; 
-import ParameterSliderWidget from "../static-parameter-configuration/ParameterSliderWidget"; 
+import CameraModel from "../../threejs/CameraModel"; 
+import ParameterSliderWidget from "../parameter-configuration/ParameterSliderWidget"; 
+import ParameterSwitchWidget from "../parameter-configuration/ParameterSwitchWidget"; 
+import ParameterColorWidget from "../parameter-configuration/ParameterColorWidget"; 
 
 function EditConfigurationWidget(props) {
 
     const { state, dispatch } = useRootContext(); 
-    const { engines, staticConfig } = state; 
-    const { numericProperties } = ObjectModel; 
-    const engine = engines['static']; 
+    const { staticObjectConfig, staticCameraConfig } = state; 
 
-    const sliders = numericProperties.map(({ field, min, max, step }) => 
+    const objectSliders = ObjectModel.numericProperties.map(({ field, min, max, step }) => 
         <ParameterSliderWidget 
         name={field} 
         min={min} 
         max={max} 
         step={step} 
-        value={staticConfig[field]}
+        value={staticObjectConfig[field]}
         onChange={(value) => {
             let config = {}; 
             config[field] = value; 
@@ -26,10 +27,64 @@ function EditConfigurationWidget(props) {
         />
     ); 
 
+    const cameraAnimationSwitches = CameraModel.animationBooleanProperties.map(field => 
+        <ParameterSwitchWidget
+        name={field}
+        defaultChecked={staticCameraConfig['animation'][field]}
+        onChange={(checked) => {
+            let config = { 'animation': {}, 'camera': {} }; 
+            config['animation'][field] = checked; 
+            dispatch(['SET ENGINE CAMERA CONFIG', { id: 'static', config }]); 
+        }}
+        />
+    ); 
+
+    const cameraAnimationSliders = CameraModel.animationNumericProperties.map(({ field, min, max, step }) => 
+        <ParameterSliderWidget 
+        name={field} 
+        min={min} 
+        max={max} 
+        step={step} 
+        value={staticCameraConfig['animation'][field]}
+        onChange={(value) => {
+            let config = { 'animation': {}, 'camera': {} }; 
+            config['animation'][field] = value; 
+            dispatch(['SET ENGINE CAMERA CONFIG', { id: 'static', config }]);  
+        }}
+        />
+    ); 
+
+    const cameraSliders = CameraModel.cameraNumericProperties.map(({ field, min, max, step }) => 
+        <ParameterSliderWidget 
+        name={field} 
+        min={min} 
+        max={max} 
+        step={step} 
+        value={staticCameraConfig['camera'][field]}
+        onChange={(value) => {
+            let config = { 'animation': {}, 'camera': {} }; 
+            config['camera'][field] = value; 
+            dispatch(['SET ENGINE CAMERA CONFIG', { id: 'static', config }]);  
+        }}
+        />  
+    ); 
+
+
     return (
         <Row>
             <Col>
-              {sliders}  
+
+                <h3>Object Properties</h3>
+                {objectSliders}  
+                <ParameterColorWidget/>
+
+                <h3>Camera Animation Properties</h3>
+                {cameraAnimationSwitches} 
+                {cameraAnimationSliders}
+
+                <h3>Camera Properties</h3>
+                {cameraSliders}
+                
             </Col>
         </Row>
     )

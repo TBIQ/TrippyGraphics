@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"; 
-import configs from "../threejs/SpiralizationEngineConfigurations"; 
+import objectConfigs from "../threejs/SpiralizationEngineConfigurations"; 
 import { useRootContext } from "../context/context"; 
 
 const { localStorage } = window; 
@@ -16,7 +16,7 @@ function LocalDatabase(props) {
         // Check to ensure we have previously initialized the browser storage from
         // locally definied initial state. If not, we do so here 
         if (!localStorage.getItem(key)) {
-            localStorage.setItem(key, JSON.stringify(configs)); 
+            localStorage.setItem(key, JSON.stringify(objectConfigs)); 
         }
 
         // Either we previously initialized data or we just initialized data so in 
@@ -29,8 +29,8 @@ function LocalDatabase(props) {
 
         // Initialize from in browser memory on startup 
         if (completeFirstWrite) {
-            let configs = JSON.parse(localStorage.getItem(key)); 
-            dispatch(['SET CONFIGS', configs]); 
+            let objectConfigs = JSON.parse(localStorage.getItem(key)); 
+            dispatch(['SET objectConfigs', objectConfigs]); 
         }
         
     }, [completeFirstWrite]);

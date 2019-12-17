@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as dat from 'dat.gui';
 import _ from "lodash";
 import TWEEN from '@tweenjs/tween.js';
-import configs from "./SpiralizationEngineConfigurations"; 
+import objectConfigs from "./SpiralizationEngineConfigurations"; 
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
 import ObjectModel from "./ObjectModel"; 
@@ -37,7 +37,7 @@ class SpiralizationEngine {
 
   }
 
-  interpolate(cend=configs['one']) {
+  interpolate(cend=objectConfigs['one']) {
     /*
     Interpolate from the current configuration to some target configuration 
     */ 
@@ -45,22 +45,22 @@ class SpiralizationEngine {
     (
       new AnimationChain([
         new AnimationGroup([
-          new Animation(this.objectModel, configs['one'], 2000)
+          new Animation(this.objectModel, objectConfigs['one'], 2000)
         ]),
         new AnimationGroup([
-          new Animation(this.objectModel, configs['two'], 2000)
+          new Animation(this.objectModel, objectConfigs['two'], 2000)
         ]),
         new AnimationGroup([
-          new Animation(this.objectModel, configs['three'], 2000)
+          new Animation(this.objectModel, objectConfigs['three'], 2000)
         ]),
         new AnimationGroup([
-          new Animation(this.objectModel, configs['four'], 2000)
+          new Animation(this.objectModel, objectConfigs['four'], 2000)
         ]),
         new AnimationGroup([
-          new Animation(this.objectModel, configs['five'], 2000)
+          new Animation(this.objectModel, objectConfigs['five'], 2000)
         ]),
         new AnimationGroup([
-          new Animation(this.objectModel, configs['six'], 2000)
+          new Animation(this.objectModel, objectConfigs['six'], 2000)
         ])
       ])
     )
@@ -80,6 +80,7 @@ class SpiralizationEngine {
         requestAnimationFrame( animate );
         TWEEN.update(time);
         this.objectModel.update(); 
+        this.cameraModel.update(); 
         this.renderer.render( this.scene, this.camera );
     }
 
@@ -90,7 +91,7 @@ class SpiralizationEngine {
   }
 
   animate() {
-    this.interpolate(configs['one']);
+    this.interpolate(objectConfigs['one']);
   }
 
   applyConfig(config) {
@@ -98,6 +99,12 @@ class SpiralizationEngine {
     this.objectModel.clearScene(); 
     this.objectModel.render(); 
   }
+
+  applyCameraConfig(config) {
+    this.cameraModel.applyCameraAnimationConfig(config.animation); 
+    this.cameraModel.applyCameraConfig(config.camera);
+  }
+
 
 }
 

@@ -7,19 +7,22 @@ export const reducerInitialState = {
     singleViewMode: 'static',   // can either be 'static' or 'animation' 
     splitViewOrder: 'static',   // can either be 'static' or 'animation' 
 
-    staticConfig: null,         // config currently applied to static engine
-    configs: {},                // map of id to a saved configuration 
-    engines: {},                // map of id to an engine   
-    engineConfigs: {}           // map of id to a config that should be applied to an engine
+    staticObjectConfig: null,   // object config currently applied to static engine
+    staticCameraConfig: null,   // camera config currently applied to static engine
 
+    objectConfigs: {},          // map of id to a saved configuration 
+    engines: {},                // map of id to an engine   
+    engineObjectConfigs: {},    // map of id to an object config that should be applied to an engine
+    engineCameraConfigs: {}     // map of id to an camera config that should be applied to an engine
+    
 };
 
 export function reducer(state, [type, payload]) {
 
     const mutators = { 
 
-        'SET CONFIGS': () => {
-            return { ...state, configs: payload };  
+        'SET objectConfigs': () => {
+            return { ...state, objectConfigs: payload };  
         },
 
         'SET VIEW LAYOUT': () => {
@@ -35,7 +38,11 @@ export function reducer(state, [type, payload]) {
         },
 
         'SET STATIC CONFIG': () => {
-            return { ...state, staticConfig: payload }; 
+            return { ...state, staticObjectConfig: payload }; 
+        }, 
+
+        'SET STATIC CAMERA CONFIG': () => {
+            return { ...state, staticCameraConfig: payload }; 
         }, 
 
         'REGISTER ENGINE': () => {
@@ -47,12 +54,24 @@ export function reducer(state, [type, payload]) {
 
         'SET ENGINE CONFIG': () => {
             let { id, config } = payload; 
-            let engineConfigs = {}; 
-            engineConfigs[id] = config; 
-            return { ...state, engineConfigs };
+            let engineObjectConfigs = {}; 
+            engineObjectConfigs[id] = config; 
+            return { ...state, engineObjectConfigs };
         }, 
 
+        'SET ENGINE CAMERA CONFIG': () => {
+            let { id, config } = payload; 
+            let engineCameraConfigs = {}; 
+            engineCameraConfigs[id] = config; 
+            return { ...state, engineCameraConfigs };
+        }
+
     }; 
+
+    if (mutators[type] === undefined) {
+        debugger; 
+    }
+
 
     return mutators[type](); 
 

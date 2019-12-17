@@ -14,6 +14,48 @@ class CameraModel {
       rotateStep: Math.PI / 180
     }
 
+    static cameraNumericProperties = [
+      { 
+        field: 'near', 
+        min: 1, 
+        max: 100, 
+        step: 1 
+      }, 
+      { 
+        field: 'far', 
+        min: 100, 
+        max: 1000, 
+        step: 10
+      }, 
+      { 
+        field: 'fov', 
+        min: 30, 
+        max: 90, 
+        step: 3
+      }, 
+    ]
+
+    static animationBooleanProperties = [
+      'rotate', 
+      'glide', 
+      'forward'
+    ]
+
+    static animationNumericProperties = [
+      { 
+        field: 'cameraStepPerFrame', 
+        min: .01, 
+        max: 1, 
+        step: .01 
+      }, 
+      { 
+        field: 'rotateStep', 
+        min: Math.PI / 180, 
+        max: Math.PI / 2, 
+        step: Math.PI / 180 
+      }, 
+    ]
+
     constructor(camera) {
   
       // A Three.js camera object 
@@ -64,7 +106,18 @@ class CameraModel {
       let { x, y, z } = this.camera.rotation; 
       this.camera.rotation.set(x, y, z + rotateStep); 
     }
-  
+
+    applyCameraAnimationConfig(config) {
+      // Updating cameraAnimationState 
+      Object.assign(this.cameraAnimationState, config); 
+    }
+
+    applyCameraConfig(config) {
+      // Updating cameraState 
+      Object.assign(this.cameraState, config); 
+      this.applyCameraState(); 
+    }
+
     update() {
       /*
       Updates threejs camera based on model settings 
