@@ -1,15 +1,16 @@
 import React from "react"; 
 import { useRootContext } from "../../context/context"; 
-import { faCode } from '@fortawesome/free-solid-svg-icons';
+import { faPalette } from '@fortawesome/free-solid-svg-icons';
 import LoadListWidget from "../general/LoadListWidget"; 
 
 function LoadColorsWidget(props) {
 
     const { state } = useRootContext(); 
-    const { objectConfigs } = state; 
-    const ids = Object.keys(objectConfigs); 
+    const { colorPalettes } = state; 
 
-    return <LoadListWidget ids={ids} icon={faCode}/>; 
+    const ids = Object.keys(colorPalettes); 
+
+    return <LoadListWidget ids={ids} icon={faPalette} onClick={() => false}/>; 
 
 }
 

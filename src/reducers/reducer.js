@@ -2,7 +2,6 @@ import _ from "lodash";
 
 export const reducerInitialState = {
 
-
     layoutMode: 'split',        // can either be 'split' or 'full' 
     singleViewMode: 'static',   // can either be 'static' or 'animation' 
     splitViewOrder: 'static',   // can either be 'static' or 'animation' 
@@ -10,6 +9,7 @@ export const reducerInitialState = {
     staticObjectConfig: null,   // object config currently applied to static engine
     staticCameraConfig: null,   // camera config currently applied to static engine
 
+    colorPalettes: {},          // map of color palette name to list of colors 
     objectConfigs: {},          // map of id to a saved configuration 
     engines: {},                // map of id to an engine   
     engineObjectConfigs: {},    // map of id to an object config that should be applied to an engine
@@ -21,8 +21,12 @@ export function reducer(state, [type, payload]) {
 
     const mutators = { 
 
-        'SET objectConfigs': () => {
+        'SET OBJECT CONFIGS': () => {
             return { ...state, objectConfigs: payload };  
+        },
+
+        'SET COLOR PALETTES': () => {
+            return { ...state, colorPalettes: payload }; 
         },
 
         'SET VIEW LAYOUT': () => {
@@ -71,7 +75,6 @@ export function reducer(state, [type, payload]) {
     if (mutators[type] === undefined) {
         debugger; 
     }
-
 
     return mutators[type](); 
 

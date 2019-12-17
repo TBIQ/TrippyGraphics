@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react"; 
-import objectConfigs from "../threejs/SpiralizationEngineConfigurations"; 
+import objectConfigs from "../threejs/SpiralizationEngineConfigurations";
+import palettes from "../threejs/ColorPalettes";  
 import { useRootContext } from "../context/context"; 
 
 const { localStorage } = window; 
-const key = 'config'; 
+const configKey = 'config'; 
+const colorsKey = 'colors'; 
 
 function LocalDatabase(props) {
 
@@ -13,14 +15,17 @@ function LocalDatabase(props) {
 
     useEffect(() => {
 
-        // Check to ensure we have previously initialized the browser storage from
-        // locally definied initial state. If not, we do so here 
-        if (!localStorage.getItem(key)) {
-            localStorage.setItem(key, JSON.stringify(objectConfigs)); 
+        // Initialize config data 
+        if (!localStorage.getItem(configKey)) {
+            localStorage.setItem(configKey, JSON.stringify(objectConfigs)); 
         }
 
-        // Either we previously initialized data or we just initialized data so in 
-        // both cases, we have completed the first write 
+        // Initialize color data 
+        if (!localStorage.getItem(colorsKey)) {
+            localStorage.setItem(colorsKey, JSON.stringify(palettes)); 
+        }
+
+        // Data now exists in local storage. Mark first write as complete 
         setCompleteFirstWrite(true); 
 
     }, [completeFirstWrite]);
@@ -29,8 +34,10 @@ function LocalDatabase(props) {
 
         // Initialize from in browser memory on startup 
         if (completeFirstWrite) {
-            let objectConfigs = JSON.parse(localStorage.getItem(key)); 
-            dispatch(['SET objectConfigs', objectConfigs]); 
+            let objectConfigs = JSON.parse(localStorage.getItem(configKey)); 
+            let palettes = JSON.parse(localStorage.getItem(colorsKey)); 
+            dispatch(['SET OBJECT CONFIGS', objectConfigs]); 
+            dispatch(['SET COLOR PALETTES', palettes])
         }
         
     }, [completeFirstWrite]);
