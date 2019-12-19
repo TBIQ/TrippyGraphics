@@ -12,6 +12,9 @@ function ConfigurationColorsPanel(props) {
         save={<SaveColorsWidget/>} 
         edit={<EditColorsWidget/>} 
         load={<LoadColorsWidget/>} 
+        saveTitle="Save Palette"
+        editTitle="Edit Palette" 
+        loadTitle="Load Palette"
         /> 
     ); 
 

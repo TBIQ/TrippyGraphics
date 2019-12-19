@@ -11,6 +11,9 @@ function ConfigurationStaticPanel(props) {
             save={<SaveConfigurationWidget/>} 
             edit={<EditConfigurationWidget/>} 
             load={<LoadConfigurationWidget/>} 
+            saveTitle="Save Configuration"
+            editTitle="Edit Configuration" 
+            loadTitle="Load Configuration"
             />; 
 
 }

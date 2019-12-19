@@ -5,7 +5,6 @@ import ObjectModel from "../../threejs/ObjectModel";
 import CameraModel from "../../threejs/CameraModel"; 
 import ParameterSliderWidget from "../parameter-configuration/ParameterSliderWidget"; 
 import ParameterSwitchWidget from "../parameter-configuration/ParameterSwitchWidget"; 
-import ParameterColorWidget from "../parameter-configuration/ParameterColorWidget"; 
 
 function EditConfigurationWidget(props) {
 
@@ -76,7 +75,6 @@ function EditConfigurationWidget(props) {
 
                 <h3>Object Properties</h3>
                 {objectSliders}  
-                <ParameterColorWidget/>
 
                 <h3>Camera Animation Properties</h3>
                 {cameraAnimationSwitches} 

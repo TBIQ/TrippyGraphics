@@ -9,6 +9,7 @@ export const reducerInitialState = {
     staticObjectConfig: null,   // object config currently applied to static engine
     staticCameraConfig: null,   // camera config currently applied to static engine
 
+    palette: [],                // current color palette in colors tab of config
     colorPalettes: {},          // map of color palette name to list of colors 
     objectConfigs: {},          // map of id to a saved configuration 
     engines: {},                // map of id to an engine   
@@ -68,6 +69,22 @@ export function reducer(state, [type, payload]) {
             let engineCameraConfigs = {}; 
             engineCameraConfigs[id] = config; 
             return { ...state, engineCameraConfigs };
+        }, 
+
+        'SET CURRENT PALETTE': () => {
+            return { ...state, palette: payload }; 
+        }, 
+
+        'SAVE COLOR PALETTE': () => {
+            let colorPalettes = _.clone(state.colorPalettes); 
+            colorPalettes[payload] = state.palette; 
+            return { ...state, colorPalettes }; 
+        }, 
+
+        'SAVE CONFIG': () => {
+            let objectConfigs = _.clone(state.objectConfigs); 
+            objectConfigs[payload] = state.staticObjectConfig; 
+            return { ...state, objectConfigs }; 
         }
 
     }; 

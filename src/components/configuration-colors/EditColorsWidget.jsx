@@ -1,8 +1,9 @@
 import React from "react"; 
+import ParameterColorWidget from "../parameter-configuration/ParameterColorWidget"; 
 
 function EditColorsWidget(props) {
     
-    return null; 
+    return <ParameterColorWidget/>; 
     
 }; 
 

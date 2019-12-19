@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react"; 
 import { SketchPicker } from 'react-color';
+import { Row, Col, Button, Divider } from "antd"; 
 import _ from "lodash"; 
+import { useRootContext } from "../../context/context"; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons'
 import "../../css/ParameterColorWidget.css";
 
 const styles = {
@@ -32,41 +34,125 @@ const styles = {
     },
 }; 
 
+function ColorGrid(props) {
+
+    const { palette, numPerRow, handleClick } = props; 
+    const numColors = palette.length; 
+    const numRows = Math.ceil(numColors / numPerRow); 
+
+    return (
+        _.range(0, numRows).map(ri => (
+            <Row type="flex" justify="space-around" align="middle">
+                {_.range(ri*numPerRow, ri*numPerRow+numPerRow).map(i => (
+                    <Col>
+                        {i < numColors ? 
+                            <div 
+                            style={ styles.swatch } 
+                            key={i}>
+                                <div 
+                                onClick={_.partial(handleClick, i)}
+                                style={ Object.assign(_.clone(styles.color), { background: palette[i] } )} />
+                            </div>
+                        : 
+                            <div 
+                            style={ Object.assign(_.clone(styles.swatch), { opacity: 0 }) } 
+                            key={i}>
+                                <div 
+                                style={ styles.color } />
+                            </div>
+                        }
+                    </Col>
+                ))}
+            </Row>
+        ))
+    );
+
+}; 
+
 function ParameterColorWidget(props) {
 
-    const [palette, setPalette] = useState(["#FF0000"]);    
-    const [color, setColor] = useState("#FF0000"); 
+    // list of colors in palette 
+    const { state, dispatch } = useRootContext(); 
+    const { palette } = state; 
+    // index of active swatch, false if no swatch active 
+    const [activeIndex, setActiveIndex] = useState(false);       
+    // whether or not we display the color picker 
     const [displayColorPicker, setDisplayColorPicker] = useState(false); 
 
-    let handleClick     = () => setDisplayColorPicker(!displayColorPicker); 
-    let handleClose     = () => setDisplayColorPicker(false); 
-    let handleChange    = (newColor) => setColor(newColor.hex);
-    let handleAdd       = () => setPalette(_.concat(palette, ['#000000'])); 
+    // On swatch click, we display color picker and set the active index 
+    let handleSwatchClick = (i) => {
+        setDisplayColorPicker(true); 
+        setActiveIndex(i); 
+    };   
+
+    // On picker close, we hide color picker and un-set the active index  
+    let handleClose = () => {
+        setDisplayColorPicker(false); 
+        setActiveIndex(false); 
+    } 
+    
+    // Picker is open and color is changed, update palette. 
+    let handlePickerChange = (newColor) => {
+        let newPalette = _.clone(palette); 
+        newPalette[activeIndex] = newColor.hex; 
+        dispatch(['SET CURRENT PALETTE', newPalette]); 
+    }; 
+
+    // add a new swatch to the palette 
+    let handleAdd = () => {
+        let newPalette = _.clone(palette); 
+        newPalette.push("#000000"); 
+        dispatch(['SET CURRENT PALETTE', newPalette]); 
+    }; 
+
+    // remove last swatch from the palette
+    let handleRemove = () => {
+        let newPalette = _.clone(palette); 
+        if (newPalette.length) {
+            newPalette.pop(); 
+        }
+        dispatch(['SET CURRENT PALETTE', newPalette]); 
+    }; 
 
     return (
         <div style={{ position: 'relative' }}>
 
-            {/* Color Palette always shown  */}
-            {palette.map((color,i) => (
-                <div style={ styles.swatch } onClick={ handleClick } key={i}>
-                    <div style={ Object.assign(_.clone(styles.color), { background: color } )} />
-                </div>
-            ))}
-
             {/* Add a button for adding new colors to palette */}
-            <div style={ styles.swatch } onClick={ handleAdd }>
-                <div>
-                    <FontAwesomeIcon style={{ height: 15, width: 15 }} icon={faPlus}/>
-                </div>
+            <Row>
+                <Col span={3}>
+                    <Button 
+                    icon="plus"
+                    shape="circle"
+                    onClick={handleAdd}/>
+                </Col>
+                <Col span={3}>
+                    <Button 
+                    icon="minus"
+                    shape="circle"
+                    onClick={handleRemove}/>
+                </Col>
+            </Row>
+
+            <Divider/>
+
+            <div style={{ width: '100%' }}>
+                <ColorGrid 
+                palette={palette} 
+                numPerRow={6} 
+                handleClick={handleSwatchClick}/>
             </div>
             
             {/* Color picking widget optionally shown */}
             { displayColorPicker ? (
                 <div style={ styles.popover }>
-                    {/* Unsure what this is for???? */}
-                    <div style={ styles.cover } onClick={ handleClose }/>
+                    {/* Captures click outside of picker signaling close of picker window */}
+                    <div 
+                    style={ styles.cover } 
+                    onClick={ handleClose }/>
                     {/* Color picker widget */}
-                    <SketchPicker color={ color } onChange={ handleChange } />
+                    <SketchPicker 
+                    color={ activeIndex !== false ? palette[activeIndex] : '#ffffff' } 
+                    onChange={ handlePickerChange } />
                 </div>
             ) : null }
 

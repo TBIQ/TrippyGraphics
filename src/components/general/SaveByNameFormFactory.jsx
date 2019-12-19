@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from "react"; 
 import { Row, Col, Input, Form, Button } from "antd"; 
-import { useRootContext } from "../../context/context"; 
 
-function hasErrors(fieldsError) {
-    return Object.keys(fieldsError).some(field => fieldsError[field]);
-}
+
 
 function SaveByNameFormFactory(formName) {
+
+    function hasErrors(fieldsError) {
+        // debugger;
+        return Object.keys(fieldsError).some(field => fieldsError[field]);
+    }
     
     function SaveByNameForm(props) {
     
         /*
         Allow user to name and save current static configuration
         */
-        const { form, placeholder } = props; 
-        const { state, dispatch } = useRootContext(); 
+        const { form, placeholder, saveCallback } = props; 
         const [firstRender, setFirstRender] = useState(true); 
     
         useEffect(() => {
             // indicate first render has occurred 
-            setFirstRender(true); 
+            setFirstRender(false); 
         }, []); 
     
         useEffect(() => {
@@ -33,7 +34,7 @@ function SaveByNameFormFactory(formName) {
                 let formIsValid = !err; 
                 if (formIsValid) {
                     let { name } = values; 
-                    // TODO: dispatch creation of new confguration here 
+                    saveCallback(name); 
                 }
             });
         };
