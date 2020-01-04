@@ -17,6 +17,7 @@ function SaveByNameFormFactory(formName) {
         */
         const { form, placeholder, saveCallback } = props; 
         const [firstRender, setFirstRender] = useState(true); 
+        const inputWidth = props.inputWidth ? props.inputWidth : 250; 
     
         useEffect(() => {
             // indicate first render has occurred 
@@ -58,7 +59,7 @@ function SaveByNameFormFactory(formName) {
                                 ],
                             })(
                                 <Input 
-                                style={{ width: 250 }}
+                                style={{ width: inputWidth }}
                                 placeholder={placeholder}
                                 maxLength={25}
                                 allowClear

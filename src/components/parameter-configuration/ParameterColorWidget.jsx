@@ -3,9 +3,8 @@ import { SketchPicker } from 'react-color';
 import { Row, Col, Button, Divider } from "antd"; 
 import _ from "lodash"; 
 import { useRootContext } from "../../context/context"; 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons'
 import "../../css/ParameterColorWidget.css";
+import { local } from "d3-selection";
 
 const styles = {
     'color': {
@@ -71,9 +70,12 @@ function ColorGrid(props) {
 
 function ParameterColorWidget(props) {
 
-    // list of colors in palette 
     const { state, dispatch } = useRootContext(); 
-    const { palette } = state; 
+    const { staticObjectConfig } = state; 
+    const palette = staticObjectConfig.colors; 
+
+    // local color palette 
+    const [localPalette, setLocalPalette] = useState(_.clone(palette)); 
     // index of active swatch, false if no swatch active 
     const [activeIndex, setActiveIndex] = useState(false);       
     // whether or not we display the color picker 
@@ -93,26 +95,35 @@ function ParameterColorWidget(props) {
     
     // Picker is open and color is changed, update palette. 
     let handlePickerChange = (newColor) => {
-        let newPalette = _.clone(palette); 
-        newPalette[activeIndex] = newColor.hex; 
-        dispatch(['SET CURRENT PALETTE', newPalette]); 
+        let newPalette = _.clone(localPalette); 
+        let { r, g, b } = newColor.rgb; 
+        newPalette[activeIndex] = `rgb(${r}, ${g}, ${b})`; 
+        setLocalPalette(newPalette);  
     }; 
 
     // add a new swatch to the palette 
     let handleAdd = () => {
-        let newPalette = _.clone(palette); 
-        newPalette.push("#000000"); 
-        dispatch(['SET CURRENT PALETTE', newPalette]); 
+        let newPalette = _.clone(localPalette); 
+        newPalette.push("rgb(0, 0, 0)"); 
+        setLocalPalette(newPalette); 
     }; 
 
     // remove last swatch from the palette
     let handleRemove = () => {
-        let newPalette = _.clone(palette); 
+        let newPalette = _.clone(localPalette); 
         if (newPalette.length) {
             newPalette.pop(); 
         }
-        dispatch(['SET CURRENT PALETTE', newPalette]); 
+        setLocalPalette(newPalette); 
     }; 
+
+    // apply the local color palette to the static engine 
+    let handleApply = () => {
+        let config = { 'colors': localPalette }; 
+        dispatch(['SET ENGINE CONFIG', { id: 'static', config }]); 
+    }; 
+
+    console.log(localPalette); 
 
     return (
         <div style={{ position: 'relative' }}>
@@ -131,13 +142,17 @@ function ParameterColorWidget(props) {
                     shape="circle"
                     onClick={handleRemove}/>
                 </Col>
+                <Col span={3}>
+                    <Button 
+                    onClick={handleApply}>{"Apply"}</Button>
+                </Col>
             </Row>
 
             <Divider/>
 
             <div style={{ width: '100%' }}>
                 <ColorGrid 
-                palette={palette} 
+                palette={localPalette} 
                 numPerRow={6} 
                 handleClick={handleSwatchClick}/>
             </div>
@@ -151,7 +166,7 @@ function ParameterColorWidget(props) {
                     onClick={ handleClose }/>
                     {/* Color picker widget */}
                     <SketchPicker 
-                    color={ activeIndex !== false ? palette[activeIndex] : '#ffffff' } 
+                    color={ activeIndex !== false ? localPalette[activeIndex] : '#ffffff' } 
                     onChange={ handlePickerChange } />
                 </div>
             ) : null }

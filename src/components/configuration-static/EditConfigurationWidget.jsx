@@ -5,6 +5,7 @@ import ObjectModel from "../../threejs/ObjectModel";
 import CameraModel from "../../threejs/CameraModel"; 
 import ParameterSliderWidget from "../parameter-configuration/ParameterSliderWidget"; 
 import ParameterSwitchWidget from "../parameter-configuration/ParameterSwitchWidget"; 
+import ConfigurationColorsPanel from "../configuration-colors/ConfigurationColorsPanel"; 
 
 function EditConfigurationWidget(props) {
 
@@ -68,7 +69,6 @@ function EditConfigurationWidget(props) {
         />  
     ); 
 
-
     return (
         <Row>
             <Col>
@@ -82,6 +82,9 @@ function EditConfigurationWidget(props) {
 
                 <h3>Camera Properties</h3>
                 {cameraSliders}
+
+                <h3>Colors</h3>
+                <ConfigurationColorsPanel/>
                 
             </Col>
         </Row>

@@ -1,5 +1,4 @@
 import * as THREE from "three"; 
-import * as dat from 'dat.gui';
 import _ from "lodash";
 import TWEEN from '@tweenjs/tween.js';
 import objectConfigs from "./SpiralizationEngineConfigurations"; 
@@ -10,7 +9,9 @@ import { Animation, AnimationGroup, AnimationChain } from "./Animation";
 
 class SpiralizationEngine {
 
-  constructor(container) {
+  constructor(container, id) {
+
+    this.id = id; 
 
     // Create objects to manage scene 
     let { scene, camera, renderer } = threejsSetupBasics(container); 
@@ -37,7 +38,11 @@ class SpiralizationEngine {
 
   }
 
-  interpolate(cend=objectConfigs['one']) {
+  interpolateUsingChain(chain) {
+    chain.run(); 
+  }
+
+  interpolate() {
     /*
     Interpolate from the current configuration to some target configuration 
     */ 
@@ -73,21 +78,18 @@ class SpiralizationEngine {
     Starts render loop 
     */ 
 
-    this.objectModel.clearScene();
-    this.objectModel.render(); 
-
     let animate = (time) => {
         requestAnimationFrame( animate );
         TWEEN.update(time);
         this.objectModel.update(); 
         this.cameraModel.update(); 
+        this.objectModel.clearScene(); 
+        this.objectModel.render(); 
         this.renderer.render( this.scene, this.camera );
     }
 
     animate(); 
     
-    
-
   }
 
   animate() {
@@ -108,88 +110,4 @@ class SpiralizationEngine {
 
 }
 
-export default SpiralizationEngine; 
-
-// export default function SpiralizationEngine(container) {
-
-//     this.start = () => {   
-  
-//       let animate = (time) => {
-//         requestAnimationFrame( animate );
-//         TWEEN.update(time);
-//         this.shaderUniforms.time.value += clock.getDelta(); 
-//         if (this.farClipDistance !== camera.far) {
-//           camera.far = this.farClipDistance; 
-//           camera.updateProjectionMatrix();
-//         }
-//         if (this.glide) {
-//           camera.position.set(0, 0, camera.position.z + this.cameraStepPerFrame * (this.forward ? 1 : -1));
-//         }
-//         if (this.rotate) {
-//           let { rotation } = camera; 
-//           let { x, y, z } = rotation; 
-//           camera.rotation.set(x, y, z + this.rotateStep); 
-//         }
-//         renderer.render( scene, camera );
-//       }
-  
-//       this.fullReRender = (config) => {
-//         this.clearScene(); 
-//         this.renderObjects(typeof config === 'object' ? config : null);
-//       }
-  
-//       this.fullReRender(); 
-  
-//       this.enableGuiControls = () => {
-  
-//         const gui = new dat.GUI();
-  
-//         gui.add(this, 'farClipDistance', 100, 1000).step(10);
-//         gui.add(this, 'cameraStepPerFrame', 0, 10).step(.05);  
-//         gui.add(this, 'rotate').listen(); 
-//         gui.add(this, 'glide').listen(); 
-//         gui.add(this, 'forward');
-    
-
-
-
-
-//         let c1 = gui.add(this, 'radius', .1, 10).step(.5).listen();
-//         let c2 = gui.add(this, 'lensWidthFar', 0, 10).step(.1).listen();
-//         let c3 = gui.add(this, 'lensWidthNear', 0, 10).step(.1).listen();
-//         let c4 = gui.add(this, 'focalDilationFrontNear', .01, 1).listen(); 
-//         let c5 = gui.add(this, 'focalDilationFrontFar', .01, 1).listen(); 
-//         let c6 = gui.add(this, 'lensAngularStep', 0, Math.PI * 2).step(Math.PI * 2 / 100).listen();
-//         let c8 = gui.add(this, 'planeHeight', .5, 8).step(.125).listen();
-//         let c10 = gui.add(this, 'parabolicDistortion', 0, 10).step(.25).listen(); 
-    
-//         for (let c of [c1, c2, c3, c4, c5, c6, c8]) c.onChange(this.fullReRender);
-
-//         let c7 = gui.add(this, 'numAngularSteps', 1, 24).step(1).listen(); 
-//         c7.onChange(v => {
-//           // angularStep is a derived property of numAngularSteps
-//           this.numAngularSteps = v;
-//           this.angularStep = Math.PI * 2 / v; 
-//           this.fullReRender(); 
-//         })
-
-//         // Update the uniforms passed to the shader 
-//         c10.onChange(v => this.shaderUniforms.parabolicDistortion.value = v); 
-
-//         // Add mechanism for updating individual colors of gradient 
-//         let colorC = gui.addFolder('color'); 
-//         for (let i = 0; i < this.colorsArr.length; i++) {
-//           colorC.addColor(this.colorsObj, i)
-//           .onChange(_.partial((index, newColor) => {
-//             this.shaderUniforms.colors.value[index] = stringToThreeColor(newColor); 
-//           }, i)); 
-//         }
-
-//       }; 
-  
-//       animate();
-
-
-//     }
-
-//   }
+export default SpiralizationEngine;

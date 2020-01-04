@@ -14,6 +14,7 @@ function SaveColorsWidget(props) {
         <SaveByNameForm 
         placeholder="Enter Name for Color Palette"
         saveCallback={saveCurrentPalette}
+        inputWidth={235}
         />
     ); 
 

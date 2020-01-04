@@ -36,12 +36,12 @@ function ViewManager(props) {
             animationContainer.current && 
             !initialized
         ) {
-            let newStaticEngine = new SpiralizationEngine(staticContainer.current);
-            let newAnimationEngine = new SpiralizationEngine(animationContainer.current); 
+            let newStaticEngine = new SpiralizationEngine(staticContainer.current, 'static');
+            let newAnimationEngine = new SpiralizationEngine(animationContainer.current, 'animation'); 
             newStaticEngine.start(); 
             newAnimationEngine.start(); 
             newAnimationEngine.animate(); 
-            dispatch(['REGISTER ENGINE', { id: 'static', engine: newStaticEngine }]); 
+            dispatch(['REGISTER ENGINE', { id: 'static',    engine: newStaticEngine }]); 
             dispatch(['REGISTER ENGINE', { id: 'animation', engine: newAnimationEngine }]); 
             setInitialized(true); 
             updateDimensions(); 

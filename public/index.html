@@ -73,14 +73,17 @@
     </script>
 
     <script id="raw-instanced-vertex-shader" type="x-shader/x-vertex">
+
       precision highp float;
       uniform mat4 modelViewMatrix;
       uniform mat4 projectionMatrix;
       uniform mat3 normalMatrix;
+      uniform float parabolicDistortion; 
       attribute vec2 uv; 
       
-      //'blueprint' attribute
+      //'blueprint' attributes
       attribute vec3 position;
+      attribute vec3 normal; 
       
       //instance attributes 
       attribute vec3 offset;
@@ -91,26 +94,44 @@
       
       // transforms the 'blueprint' geometry with instance attributes
       vec3 transform( inout vec3 position, vec3 T, vec4 R, vec3 S ) {
+          
           //applies the scale
           position *= S;
+
           //computes the rotation where R is a (vec4) quaternion
           position += 2.0 * cross( R.xyz, cross( R.xyz, position ) + R.w * position );
+
           //translates the transformed 'blueprint'
           position += T;
+
           //return the transformed position
           return position;
+
       }
       
       void main() {
+
           // set uv coords
           vUv = uv; 
+
           //collects the 'blueprint' coordinates
           vec3 pos = position;
+          vec3 norm = normal; 
+
           //transform it
           transform( pos, offset, orientation, vec3( 1.0, 1.0, 1.0 ) );
+          transform( norm, offset, orientation, vec3( 1.0, 1.0, 1.0 ) ); 
+
+          // apply uv displacement based on distance from geometric centroid 
+          vec2 uvCentroid = vec2(.5, .5); 
+          float d = distance(vec2(uv.x, uv.y), uvCentroid); 
+          vec3 pos2 = pos + norm * 1.0 / d * parabolicDistortion; 
+
           //project to get the fragment position
-          gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( pos2, 1.0 );
+
       }
+
     </script>
 
     <script id="vertex-shader-uv-parabolic" type="x-shader/x-vertex">
@@ -161,17 +182,19 @@
       uniform float time; 
       uniform float speed; 
 
+      uniform int numcolors; 
+
       uniform bool sinusoidX; 
       uniform bool sinusoidY; 
 
-      uniform vec3 colors[NUMCOLORS]; 
+      uniform vec3 colors[MAX_NUM_COLORS]; 
       varying vec2 vUv;
 
 			void main(void) {
 
         // Compute modulus wrt time so we dont overflow when 
         // the shader is run continuously for a long time 
-        float offset = mod(time * speed, float(NUMCOLORS)); 
+        float offset = mod(time * speed, float(numcolors)); 
 
         // Add sinosuoidal offset to original offset based on uv coord
         if (sinusoidX) {
@@ -181,11 +204,11 @@
           offset = offset + sin(20.0 * vUv.y); 
         }
 
-        float dGradient = 1.0 / float(NUMCOLORS);
+        float dGradient = 1.0 / float(numcolors);
         float index = floor(vUv.y / dGradient + offset); 
-        int iindex = int(mod(index, float(NUMCOLORS))); 
+        int iindex = int(mod(index, float(numcolors))); 
         vec3 color; 
-        for (int i = 0; i < NUMCOLORS; i++) {
+        for (int i = 0; i < MAX_NUM_COLORS; i++) {
           if (i == iindex) {
             color = colors[i]; 
             break; 
@@ -193,6 +216,7 @@
         }
 
         gl_FragColor = vec4( color, 1.0 );
+
       }
       
     </script>

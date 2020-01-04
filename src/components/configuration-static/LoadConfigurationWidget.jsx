@@ -3,7 +3,6 @@ import { useRootContext } from "../../context/context";
 import { faCode } from '@fortawesome/free-solid-svg-icons';
 import LoadListWidget from "../general/LoadListWidget"; 
 
-
 function LoadConfigurationWidget(props) {
 
     const { state, dispatch } = useRootContext(); 

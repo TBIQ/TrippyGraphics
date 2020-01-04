@@ -6,15 +6,18 @@ export const reducerInitialState = {
     singleViewMode: 'static',   // can either be 'static' or 'animation' 
     splitViewOrder: 'static',   // can either be 'static' or 'animation' 
 
-    staticObjectConfig: null,   // object config currently applied to static engine
-    staticCameraConfig: null,   // camera config currently applied to static engine
+    staticObjectConfig: null,   // current object state defined in configuration menu 
+    staticCameraConfig: null,   // current camera state defined in configuration menu 
+    currentAnimation: null,    // current animation state defined in configuration menu 
 
-    palette: [],                // current color palette in colors tab of config
-    colorPalettes: {},          // map of color palette name to list of colors 
-    objectConfigs: {},          // map of id to a saved configuration 
     engines: {},                // map of id to an engine   
     engineObjectConfigs: {},    // map of id to an object config that should be applied to an engine
-    engineCameraConfigs: {}     // map of id to an camera config that should be applied to an engine
+    engineCameraConfigs: {},    // map of id to an camera config that should be applied to an engine
+
+    // these objects are stored in the in-browser database 
+    colorPalettes: {},          // map of color palette name to list of colors 
+    objectConfigs: {},          // map of id to a saved configuration 
+    animations: {},             // map of id to animation definition 
     
 };
 
@@ -71,10 +74,6 @@ export function reducer(state, [type, payload]) {
             return { ...state, engineCameraConfigs };
         }, 
 
-        'SET CURRENT PALETTE': () => {
-            return { ...state, palette: payload }; 
-        }, 
-
         'SAVE COLOR PALETTE': () => {
             let colorPalettes = _.clone(state.colorPalettes); 
             colorPalettes[payload] = state.palette; 
@@ -85,6 +84,17 @@ export function reducer(state, [type, payload]) {
             let objectConfigs = _.clone(state.objectConfigs); 
             objectConfigs[payload] = state.staticObjectConfig; 
             return { ...state, objectConfigs }; 
+        }, 
+
+        'SAVE ANIMATION': () => {
+            let animations = _.clone(state.animations); 
+            animations[payload] = state.currentAnimation; 
+            return { ...state, animations }; 
+        }, 
+
+        'SET CURRENT ANIMATION': () => {
+            let currentAnimation = payload.animation; 
+            return { ...state, currentAnimation }; 
         }
 
     }; 

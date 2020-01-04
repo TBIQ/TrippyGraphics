@@ -1,8 +1,8 @@
 import * as THREE from "three"; 
 
+
 export function stringToThreeColor(colorStr) {
-    let { r, g, b } = new THREE.Color(colorStr); 
-    return new THREE.Vector3(r, g, b); 
+    return new THREE.Color(colorStr); 
 }
 
 export function threejsSetupBasics(container) {

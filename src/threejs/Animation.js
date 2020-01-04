@@ -7,12 +7,25 @@ export class AnimationChain {
     Contains a sequence of animation chains to be executed synchronously 
     */
 
-    constructor(chain=[]) {
+    constructor(chain=[], name='') {
         this.chain = chain; 
+        this.name = name; 
     }
 
     add(group) {
         this.chain.push(group); 
+    }
+
+    addToGroupAtIndex(index, animation) {
+        this.chain[index].add(animation); 
+    }
+
+    iter() {
+        const { chain } = this; 
+        function* chainIterator() {
+            for (let c of chain) yield c;
+        }
+        return chainIterator(); 
     }
 
     async run() {
@@ -40,6 +53,14 @@ export class AnimationGroup {
         this.animations.push(animation); 
     }
 
+    iter() {
+        const { animations } = this; 
+        function* groupIterator() {
+            for (let a of animations) yield a;
+        }
+        return groupIterator(); 
+    }
+
     run() {
         /*
         Runs all of the animations within this group in parallel 
@@ -54,16 +75,32 @@ export class Animation {
 
     // An animation to be applied to some instanced ObjectModel 
 
-    constructor(objectModel, endState, duration, delay=0, easing=TWEEN.Easing.Quadratic.Out) {
+    constructor(objectModel, 
+                endState, 
+                duration, 
+                delay=0, 
+                easing=TWEEN.Easing.Quadratic.Out) {
 
-        this.objectModel = objectModel; 
-        this.endState = endState; 
-        this.duration = duration; 
-        this.easing = easing; 
+        this.objectModel    = objectModel; 
+        this.endState       = endState; 
+        this.duration       = duration; 
+        this.easing         = easing; 
+        this.delay          = delay; 
+        this.isRunning      = false; 
+        this.isDone         = false; 
 
-        this.isRunning = false; 
-        this.isDone = false; 
+    }
 
+    setName(name) {
+        this.name = name; 
+    }
+
+    getName() {
+        return this.name ? this.name : ''; 
+    }
+
+    getDuration() {
+        return this.duration; 
     }
 
     running() {
@@ -89,6 +126,7 @@ export class Animation {
             }
             return acc; 
         }, {}); 
+
         this.tween = new TWEEN.Tween(this.updateState)
                     .to(this.endState, this.duration)      
                     // .wait(delay)               

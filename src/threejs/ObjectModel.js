@@ -5,72 +5,94 @@ import _ from "lodash";
 import { stringToThreeColor, BufferGeometryCentroidComputer } from "./util"; 
 import Circle from "./Circle"; 
 
+function makeColorsArray(colors, maxLength) {
+    let fullColors = new Array(); 
+    let filler = new THREE.Color( 0x000000 ); 
+    for (let i = 0; i < maxLength; i++) {
+        fullColors.push(i < colors.length ? colors[i] : filler); 
+    }
+    return fullColors; 
+}
+
 
 class ObjectModel {
 
     static MAX_NUM_ANGULAR_STEPS    = 24; 
-    static MAX_NUM_INSTANCES        = 24 * 1000; 
+    static MAX_NUM_COLORS           = 25; 
+    static MAX_NUM_INSTANCES        = ObjectModel.MAX_NUM_ANGULAR_STEPS * 1000; 
     static HIDE_POS                 = new THREE.Vector3(-1000,-1000,-1000);
 
     static numericProperties = [
         {
-          field: 'radius', 
-          min: .1, 
-          max: 10, 
-          step: .5
+            field: 'radius', 
+            min: .1, 
+            max: 10, 
+            step: .5
         }, 
         {
-          field: 'lensWidthFar', 
-          min: 0, 
-          max: 10, 
-          step: .1
+            field: 'lensWidthFar', 
+            min: 0, 
+            max: 10, 
+            step: .1
         }, 
         {
-          field: 'lensWidthNear', 
-          min: 0, 
-          max: 10, 
-          step: .1
+            field: 'lensWidthNear', 
+            min: 0, 
+            max: 10, 
+            step: .1
         }, 
         {
-          field: 'focalDilationFrontNear', 
-          min: .01, 
-          max: 1, 
-          step: .01
+            field: 'focalDilationFrontNear', 
+            min: .01, 
+            max: 1, 
+            step: .01
         }, 
         {
-          field: 'focalDilationFrontFar', 
-          min: .01, 
-          max: 1, 
-          step: .01
+            field: 'focalDilationFrontFar', 
+            min: .01, 
+            max: 1, 
+            step: .01
         }, 
         {
-          field: 'lensAngularStep', 
-          min: 0, 
-          max: Math.PI * 2, 
-          step: Math.PI * 2 / 100 
+            field: 'lensAngularStep', 
+            min: 0, 
+            max: Math.PI * 2, 
+            step: Math.PI * 2 / 100 
         }, 
         {
-          field: 'planeHeight', 
-          min: .5, 
-          max: 8, 
-          step: .125
+            field: 'planeHeight', 
+            min: .5, 
+            max: 8, 
+            step: .125
         },
         {
-          field: 'numAngularSteps', 
-          min: 1, 
-          max: 24, 
-          step: Math.PI * 2 / 100 
+            field: 'numAngularSteps', 
+            min: 1, 
+            max: 24, 
+            step: 1
+        }, 
+        {
+            field: 'parabolicDistortion', 
+            min: 0, 
+            max: 10, 
+            step: .25
+        }, 
+        {
+            field: 'speed', 
+            min: 0, 
+            max: 30, 
+            step: .25
         }
-      ]
+    ]
+
+    static shaderNumericProperties = [
+        'parabolicDistortion', 
+        'speed'
+    ]
 
     // Default object model configuration
     static defaultState = {
-
-        // colors 
-        colorsArr: palettes['material'],
-        colorsObj: _.range(0, palettes['material'])
-                    .reduce((acc, cur, i) => Object.assign(acc, { i: palettes['material'][i] }), {}), 
-
+        
         // objects  
         planeHeight: 3,
         numAngularSteps: 12,
@@ -100,7 +122,10 @@ class ObjectModel {
             },
             "colors": {
                 'type': 'v3v', 
-                'value': palettes['material'].map(stringToThreeColor)
+                'value': makeColorsArray(
+                    palettes['material'].map(stringToThreeColor), 
+                    ObjectModel.MAX_NUM_COLORS
+                )
             }, 
             'parabolicDistortion': {
                 value: 0
@@ -110,6 +135,9 @@ class ObjectModel {
             },
             'sinusoidY': {
                 value: false
+            }, 
+            'numcolors': {
+                'value': palettes['material'].length
             }
         }
 
@@ -137,8 +165,27 @@ class ObjectModel {
     };
 
     applyConfig(config) {
-        for (let k of Object.keys(config)) {
+        // apply all keys to self 
+        let keys = Object.keys(config); 
+        for (let k of keys) {
             this[k] = config[k]; 
+        }
+        // update shader specific properties 
+        if (keys.includes('colors')) {
+            if (!config.colors.map) {
+                debugger; 
+            }
+            this.shaderUniforms.colors.value = makeColorsArray(
+                config.colors.map(stringToThreeColor), 
+                ObjectModel.MAX_NUM_COLORS
+            ); 
+            this.shaderUniforms.numcolors.value = config.colors.length; 
+        }
+        if (keys.includes('speed')) {
+            this.shaderUniforms.speed.value = config.speed; 
+        }
+        if (keys.includes('parabolicDistortion')) {
+            this.shaderUniforms.parabolicDistortion.value = config.parabolicDistortion; 
         }
     }
 
@@ -159,15 +206,24 @@ class ObjectModel {
 
     initializeRenderer() {
 
-        let rawMaterial = new THREE.RawShaderMaterial({ 
-            uniforms: this.shaderUniforms, 
-            side: THREE.DoubleSide, 
-            defines: {
-                NUMCOLORS: this.colorsArr.length 
-            },
-            vertexShader: document.getElementById('raw-instanced-vertex-shader').textContent, 
-            fragmentShader: document.getElementById('fragment-shader-cycling-discrete-gradient').textContent
-        }); 
+        let vertexShader = document.getElementById('raw-instanced-vertex-shader').textContent; 
+        let fragmentShader = document.getElementById('fragment-shader-cycling-discrete-gradient').textContent;  
+
+        let rawMaterial = (
+            new THREE.RawShaderMaterial({ 
+                uniforms: this.shaderUniforms, 
+                side: THREE.DoubleSide,
+                defines: {
+                    'MAX_NUM_COLORS': 25 
+                },
+                vertexShader, 
+                fragmentShader 
+            })
+        ).clone();
+
+        // Ensure the uniforms are unique across instances of ObjectModels 
+        rawMaterial.uniforms = THREE.UniformsUtils.clone( this.shaderUniforms );
+        this.shaderUniforms = rawMaterial.uniforms; 
 
         let initPos = new THREE.Vector3( 0, 0, 0 ); 
         let nPos = new THREE.Vector3(); 
@@ -205,7 +261,7 @@ class ObjectModel {
 
         // render function has access to context that contains all resources used for computing and performing transforms 
         this.render = () => {
-
+            
             clearAttributes(); 
 
             // 3 conical slices 
@@ -233,10 +289,10 @@ class ObjectModel {
 
                     if (!singletonPlaneGeometry) {
 
-                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 3, 3 ); 
+                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 10, 10 ); 
 
-                        instancedPlaneGeometry.addAttribute('uv', singletonPlaneGeometry.attributes.uv); 
-                        instancedPlaneGeometry.addAttribute('normal', singletonPlaneGeometry.attributes.normal); 
+                        instancedPlaneGeometry.addAttribute('uv',       singletonPlaneGeometry.attributes.uv); 
+                        instancedPlaneGeometry.addAttribute('normal',   singletonPlaneGeometry.attributes.normal); 
                         instancedPlaneGeometry.addAttribute('position', singletonPlaneGeometry.attributes.position); 
                         instancedPlaneGeometry.setIndex(singletonPlaneGeometry.index); 
 
@@ -278,9 +334,9 @@ class ObjectModel {
                     q2.setFromUnitVectors(
                     v0
                         .set(
-                        singletonPlaneGeometry.attributes.position.array[sind * 3 + 0],
-                        singletonPlaneGeometry.attributes.position.array[sind * 3 + 1],
-                        singletonPlaneGeometry.attributes.position.array[sind * 3 + 2]
+                            singletonPlaneGeometry.attributes.position.array[sind * 3 + 0],
+                            singletonPlaneGeometry.attributes.position.array[sind * 3 + 1],
+                            singletonPlaneGeometry.attributes.position.array[sind * 3 + 2]
                         )
                         .applyMatrix4(transform)
                         .sub(center)
@@ -326,8 +382,6 @@ class ObjectModel {
 
                 }
 
-                // offsetsHideAfterIndex(instanceI);        
-                
                 offsetAttribute.needsUpdate = true; 
                 orientationAttribute.needsUpdate = true; 
 

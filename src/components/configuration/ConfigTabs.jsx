@@ -2,7 +2,7 @@ import React from "react";
 import { Tabs } from "antd"; 
 import ConfigurationStaticPanel from "../configuration-static/ConfigurationStaticPanel"; 
 import ConfigurationLayoutPanel from "../configuration-layout/ConfigurationLayoutPanel"; 
-import ConfigurationColorsPanel from "../configuration-colors/ConfigurationColorsPanel"; 
+import ConfigurationAnimationPanel from "../configuration-animation/ConfigurationAnimationPanel"; 
 
 const { TabPane } = Tabs; 
 
@@ -14,13 +14,10 @@ function ConfigTabs(props) {
                 <ConfigurationStaticPanel/>
             </TabPane>
             <TabPane tab="Animation" key="2">
-                Content of Tab Pane 2
+                <ConfigurationAnimationPanel/>
             </TabPane>
             <TabPane tab="Layout" key="3">
                 <ConfigurationLayoutPanel/>
-            </TabPane>
-            <TabPane tab="Colors" key="4">
-                <ConfigurationColorsPanel/>
             </TabPane>
         </Tabs>
     ); 

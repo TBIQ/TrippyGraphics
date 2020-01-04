@@ -1,0 +1,11 @@
+.tree-add-animation .ant-tree-checkbox {
+    display: none;
+}
+
+.tree-add-animation svg {
+    opacity: 0;
+}
+
+.modal-content-fixed-width {
+    width: 300px; 
+}

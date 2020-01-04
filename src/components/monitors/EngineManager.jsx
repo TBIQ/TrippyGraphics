@@ -8,22 +8,36 @@ function EngineManager(props) {
 
     const { state, dispatch } = useRootContext(); 
     const { engines, engineObjectConfigs, engineCameraConfigs } = state; 
-    let objectNumericFields = ObjectModel.numericProperties.map(({ field }) => field); 
+    let objectNumericFields = ObjectModel.numericProperties.map(({ field }) => field);
+    let objectFields = _.union(objectNumericFields, ['colors']); 
+    let { shaderNumericProperties } = ObjectModel; 
+    let shaderProperties = _.union(shaderNumericProperties, ['colors']); 
     let cameraFields = Object.keys(CameraModel.defaultCameraState); 
     let cameraAnimationFields = _.union(
         CameraModel.animationBooleanProperties, 
         CameraModel.animationNumericProperties.map(({ field }) => field)
     ); 
 
-    let updateStaticObjectConfig = () => {
+    let readObjectModel = () => {
+        // maps underlying state of threejs engine to global store object 
         let staticObjectConfig = {}; 
-        for (let f of objectNumericFields) {
-            staticObjectConfig[f] = engines['static'].objectModel[f]; 
+        for (let f of objectFields) {
+            if (shaderProperties.includes(f)) {
+                if (f === 'colors') {
+                    let colors = engines['static']['objectModel']['shaderUniforms'][f].value.map(threejsColor => `#${threejsColor.getHexString()}`); 
+                    colors = colors.slice(0, engines['static']['objectModel']['shaderUniforms']['numcolors'].value); 
+                    staticObjectConfig[f] = colors; 
+                } else {
+                    staticObjectConfig[f] = engines['static']['objectModel']['shaderUniforms'][f].value; 
+                }
+            } else {
+                staticObjectConfig[f] = engines['static']['objectModel'][f]; 
+            }
         }
         dispatch(['SET STATIC CONFIG', staticObjectConfig]); 
-    }
+    }; 
 
-    let updateStaticCameraConfig = () => {
+    let readCameraModel = () => {
         // get camera animation state 
         let staticCameraAnimationConfig = {}; 
         for (let f of cameraAnimationFields) {
@@ -43,8 +57,8 @@ function EngineManager(props) {
 
         // Update when static engine is initialized 
         if (engines['static']) {
-            updateStaticObjectConfig(); 
-            updateStaticCameraConfig(); 
+            readObjectModel(); 
+            readCameraModel(); 
         }
         
     }, [engines]); 
@@ -54,20 +68,20 @@ function EngineManager(props) {
         // Update whenever a transformation is applied to the static engine 
         if (engineObjectConfigs['static']) {
             engines['static'].applyConfig(engineObjectConfigs['static']); 
-            updateStaticObjectConfig(); 
+            readObjectModel(); 
         }
 
-    }, [engineObjectConfigs, engines]);
+    }, [engineObjectConfigs['static'], engines]);
 
     useEffect(() => {
         
         // Update whenever a transformation is applied to the static engine camera 
         if (engineCameraConfigs['static']) {
             engines['static'].applyCameraConfig(engineCameraConfigs['static']); 
-            updateStaticCameraConfig(); 
+            readCameraModel(); 
         }
 
-    }, [engineCameraConfigs, engines]);
+    }, [engineCameraConfigs['static'], engines]);
 
     return null; 
 
