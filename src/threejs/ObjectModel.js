@@ -1,4 +1,3 @@
-import TWEEN from '@tweenjs/tween.js';
 import * as THREE from "three"; 
 import palettes from "./ColorPalettes"; 
 import _ from "lodash"; 
@@ -172,9 +171,6 @@ class ObjectModel {
         }
         // update shader specific properties 
         if (keys.includes('colors')) {
-            if (!config.colors.map) {
-                debugger; 
-            }
             this.shaderUniforms.colors.value = makeColorsArray(
                 config.colors.map(stringToThreeColor), 
                 ObjectModel.MAX_NUM_COLORS

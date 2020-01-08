@@ -22,7 +22,7 @@ const styles = {
     },
     'popover': {
         position: 'relative',
-        zIndex: '2',
+        zIndex: '2'
     },
     'cover': {
         position: 'fixed',
@@ -99,38 +99,41 @@ function ParameterColorWidget(props) {
         let { r, g, b } = newColor.rgb; 
         newPalette[activeIndex] = `rgb(${r}, ${g}, ${b})`; 
         setLocalPalette(newPalette);  
+        dispatch(['SET PENDING COLOR PALETTE', newPalette]); 
     }; 
 
-    // add a new swatch to the palette 
-    let handleAdd = () => {
-        let newPalette = _.clone(localPalette); 
-        newPalette.push("rgb(0, 0, 0)"); 
-        setLocalPalette(newPalette); 
-    }; 
+    // // add a new swatch to the palette 
+    // let handleAdd = () => {
+    //     let newPalette = _.clone(localPalette); 
+    //     newPalette.push("rgb(0, 0, 0)"); 
+    //     setLocalPalette(newPalette); 
+    // }; 
 
-    // remove last swatch from the palette
-    let handleRemove = () => {
-        let newPalette = _.clone(localPalette); 
-        if (newPalette.length) {
-            newPalette.pop(); 
-        }
-        setLocalPalette(newPalette); 
-    }; 
+    // // remove last swatch from the palette
+    // let handleRemove = () => {
+    //     let newPalette = _.clone(localPalette); 
+    //     if (newPalette.length) {
+    //         newPalette.pop(); 
+    //     }
+    //     setLocalPalette(newPalette); 
+    // }; 
 
     // apply the local color palette to the static engine 
     let handleApply = () => {
-        let config = { 'colors': localPalette }; 
-        dispatch(['SET ENGINE CONFIG', { id: 'static', config }]); 
+        dispatch(['SET ENGINE CONFIG', { id: 'static', config: { 'colors': localPalette } }]); 
     }; 
 
-    console.log(localPalette); 
+    // update the pending local palette on init 
+    useEffect(() => {
+        dispatch(['SET PENDING COLOR PALETTE', localPalette]); 
+    }, []); 
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', height: 550 }}>
 
             {/* Add a button for adding new colors to palette */}
             <Row>
-                <Col span={3}>
+                {/* <Col span={3}>
                     <Button 
                     icon="plus"
                     shape="circle"
@@ -141,7 +144,7 @@ function ParameterColorWidget(props) {
                     icon="minus"
                     shape="circle"
                     onClick={handleRemove}/>
-                </Col>
+                </Col> */}
                 <Col span={3}>
                     <Button 
                     onClick={handleApply}>{"Apply"}</Button>
@@ -153,7 +156,7 @@ function ParameterColorWidget(props) {
             <div style={{ width: '100%' }}>
                 <ColorGrid 
                 palette={localPalette} 
-                numPerRow={6} 
+                numPerRow={4} 
                 handleClick={handleSwatchClick}/>
             </div>
             

@@ -1,6 +1,6 @@
 import * as THREE from "three"; 
 import _ from "lodash";
-import TWEEN from '@tweenjs/tween.js';
+import createjs from "createjs";
 import objectConfigs from "./SpiralizationEngineConfigurations"; 
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
@@ -38,49 +38,19 @@ class SpiralizationEngine {
 
   }
 
-  interpolateUsingChain(chain) {
+  async interpolateUsingChain(chain) {
     chain.run(); 
   }
 
-  interpolate() {
-    /*
-    Interpolate from the current configuration to some target configuration 
-    */ 
-
-    (
-      new AnimationChain([
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['one'], 2000)
-        ]),
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['two'], 2000)
-        ]),
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['three'], 2000)
-        ]),
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['four'], 2000)
-        ]),
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['five'], 2000)
-        ]),
-        new AnimationGroup([
-          new Animation(this.objectModel, objectConfigs['six'], 2000)
-        ])
-      ])
-    )
-    .run()
-
-  }
 
   start() {
     /*
     Starts render loop 
     */ 
 
-    let animate = (time) => {
-        requestAnimationFrame( animate );
-        TWEEN.update(time);
+    this.animate = (time) => {
+        this.id = requestAnimationFrame( this.animate );
+        createjs.Tween.tick(); 
         this.objectModel.update(); 
         this.cameraModel.update(); 
         this.objectModel.clearScene(); 
@@ -88,12 +58,8 @@ class SpiralizationEngine {
         this.renderer.render( this.scene, this.camera );
     }
 
-    animate(); 
+    this.animate(); 
     
-  }
-
-  animate() {
-    this.interpolate(objectConfigs['one']);
   }
 
   applyConfig(config) {

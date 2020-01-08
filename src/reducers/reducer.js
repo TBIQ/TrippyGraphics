@@ -8,7 +8,9 @@ export const reducerInitialState = {
 
     staticObjectConfig: null,   // current object state defined in configuration menu 
     staticCameraConfig: null,   // current camera state defined in configuration menu 
-    currentAnimation: null,    // current animation state defined in configuration menu 
+    currentAnimation: null,     // current animation state defined in configuration menu 
+
+    pendingColorPalette: null,  // current color palette value in configuration men\u (not necessarily applied to static engine)
 
     engines: {},                // map of id to an engine   
     engineObjectConfigs: {},    // map of id to an object config that should be applied to an engine
@@ -76,7 +78,7 @@ export function reducer(state, [type, payload]) {
 
         'SAVE COLOR PALETTE': () => {
             let colorPalettes = _.clone(state.colorPalettes); 
-            colorPalettes[payload] = state.palette; 
+            colorPalettes[payload] = state.pendingColorPalette;  
             return { ...state, colorPalettes }; 
         }, 
 
@@ -95,11 +97,16 @@ export function reducer(state, [type, payload]) {
         'SET CURRENT ANIMATION': () => {
             let currentAnimation = payload.animation; 
             return { ...state, currentAnimation }; 
+        }, 
+
+        'SET PENDING COLOR PALETTE': () => {
+            return { ...state, pendingColorPalette: payload }; 
         }
 
     }; 
 
     if (mutators[type] === undefined) {
+        console.log("UNDEFINED MUTATOR KEY: ", type); 
         debugger; 
     }
 

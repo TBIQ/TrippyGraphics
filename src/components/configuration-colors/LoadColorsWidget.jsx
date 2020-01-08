@@ -5,12 +5,16 @@ import LoadListWidget from "../general/LoadListWidget";
 
 function LoadColorsWidget(props) {
 
-    const { state } = useRootContext(); 
+    const { state, dispatch } = useRootContext(); 
     const { colorPalettes } = state; 
 
     const ids = Object.keys(colorPalettes); 
+    const loadPalette = id => {
+        debugger; 
+        dispatch(['SET ENGINE CONFIG', { id: 'static', config: { 'colors': colorPalettes[id] } }]); 
+    }
 
-    return <LoadListWidget ids={ids} icon={faPalette} onClick={() => false}/>; 
+    return <LoadListWidget ids={ids} icon={faPalette} onClick={loadPalette}/>; 
 
 }
 

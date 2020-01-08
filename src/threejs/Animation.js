@@ -1,5 +1,6 @@
-import TWEEN from '@tweenjs/tween.js';
+import createjs from "createjs";
 import ObjectModel from "./ObjectModel";
+import _ from "lodash"; 
 
 export class AnimationChain {
 
@@ -16,8 +17,8 @@ export class AnimationChain {
         this.chain.push(group); 
     }
 
-    addToGroupAtIndex(index, animation) {
-        this.chain[index].add(animation); 
+    getGroupAtIndex(index) {
+        return this.chain[index]; 
     }
 
     iter() {
@@ -79,7 +80,7 @@ export class Animation {
                 endState, 
                 duration, 
                 delay=0, 
-                easing=TWEEN.Easing.Quadratic.Out) {
+                easing=createjs.Ease.circInOut) {
 
         this.objectModel    = objectModel; 
         this.endState       = endState; 
@@ -118,35 +119,58 @@ export class Animation {
         resolves only when the animation has finished 
         */ 
 
+        createjs.ColorPlugin.install();
+
+        let endState = _.cloneDeep(this.endState); 
+        let numFillerColors = this.objectModel.shaderUniforms.colors.value.length - endState.colors.length; 
+        let numColors = ObjectModel.MAX_NUM_COLORS - numFillerColors; 
+
+        function* colorIdGen() { for (let i = 0; i < numColors; i++) yield `color-${i}`; }
+
         // state object updated in place during tween 
         // only updates keys corresponding to object model 
-        this.updateState = Object.keys(this.endState).reduce((acc,k) => {
+        let updateState = Object.keys(endState).reduce((acc,k) => {
             if (ObjectModel.keys.includes(k)) {
                 acc[k] = this.objectModel[k]; 
-            }
+            } 
+            else if (k === 'colors') {
+                let colors = this.objectModel.shaderUniforms.colors.value.map(threeColor => `#${threeColor.getHexString()}`);
+                let i = 0; 
+                for (let id of colorIdGen()) {
+                    acc[id] = colors[i]; 
+                    endState[id] = endState.colors[i];
+                    i += 1; 
+                }
+                delete endState.colors; 
+            } 
             return acc; 
         }, {}); 
 
-        this.tween = new TWEEN.Tween(this.updateState)
-                    .to(this.endState, this.duration)      
-                    // .wait(delay)               
-                    .easing(this.easing) 
-                    .onUpdate(() => {                   
-                        this.objectModel.applyConfig(this.updateState); 
-                        this.objectModel.clearScene(); 
-                        this.objectModel.render(); 
-                    }); 
-
-        this.isRunning = true; 
         return new Promise((resolve, reject) => {
-            this.tween
-                .onComplete(() => {
-                    this.isRunning = false; 
-                    this.isDone = true; 
-                    resolve(); 
-                })
-                .start(); 
-        });
+
+            let onChange = () => {               
+                let config = _.cloneDeep(updateState); 
+                config.colors = [];
+                for (let id of colorIdGen()) {
+                    config.colors.push(config[id]); 
+                    delete config[id]; 
+                }
+                this.objectModel.applyConfig(config); 
+                this.objectModel.clearScene(); 
+                this.objectModel.render(); 
+            }; 
+            let onComplete = () => {
+                this.isDone = true; 
+                this.isRunning = false; 
+                resolve(); 
+            }
+    
+            this.tween = createjs.Tween.get(updateState, { onChange, onComplete, useTicks: true })
+                                       .to(endState, this.duration, this.easing);
+            this.tween.play(); 
+            this.isRunning = true; 
+
+        }); 
     }
 
 }

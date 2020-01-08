@@ -19,13 +19,13 @@ function ParameterSliderWidget(props) {
 
     return (
         <Row type="flex" justify="space-around" align="middle">
-            <Col span={8}>
+            <Col span={12}>
                 <p style={ style.field }>{ name + ":" }</p>
             </Col>
             <Col span={4}>
                 <p style={ style.value }>{ roundedValue }</p>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
                 <Slider
                 value={roundedValue}
                 min={min}

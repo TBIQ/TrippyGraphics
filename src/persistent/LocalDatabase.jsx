@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react"; 
-import objectConfigs from "../threejs/SpiralizationEngineConfigurations";
-import palettes from "../threejs/ColorPalettes";  
 import { useRootContext } from "../context/context"; 
 
 const { localStorage } = window; 
@@ -15,17 +13,32 @@ function LocalDatabase(props) {
     const [completeFirstWrite, setCompleteFirstWrite] = useState(false); 
     const [completeFirstDispatch, setCompleteFirstDispatch] = useState(false); 
 
+    const writeConfigFromStateToLocalStore = () => {
+        localStorage.setItem(configKey, JSON.stringify(objectConfigs)); 
+    }; 
+    const writeColorsFromStateToLocalStore = () => {
+        localStorage.setItem(colorsKey, JSON.stringify(colorPalettes));
+    }; 
+    const readConfigFromLocalStoreToState = () => {
+        dispatch(['SET OBJECT CONFIGS', JSON.parse(localStorage.getItem(configKey))]); 
+    }; 
+    const readColorsFromLocalStoreToState = () => {
+        dispatch(['SET COLOR PALETTES', JSON.parse(localStorage.getItem(colorsKey))]); 
+    }; 
+
     // Write local values (JSON) to in memory database if this is first app load ever 
     useEffect(() => {
 
         // Initialize config data 
-        if (!localStorage.getItem(configKey)) {
-            localStorage.setItem(configKey, JSON.stringify(objectConfigs)); 
+        let prevConfigs = localStorage.getItem(configKey); 
+        if (!prevConfigs) {
+            writeConfigFromStateToLocalStore(); 
         }
 
         // Initialize color data 
-        if (!localStorage.getItem(colorsKey)) {
-            localStorage.setItem(colorsKey, JSON.stringify(palettes)); 
+        let prevColors = localStorage.getItem(colorsKey); 
+        if (!prevColors) {
+            writeColorsFromStateToLocalStore(); 
         }
         
         // Data now exists in local storage. Mark first write as complete 
@@ -37,10 +50,8 @@ function LocalDatabase(props) {
     useEffect(() => {
 
         if (completeFirstWrite && !completeFirstDispatch) {
-            let objectConfigs = JSON.parse(localStorage.getItem(configKey)); 
-            let palettes = JSON.parse(localStorage.getItem(colorsKey)); 
-            dispatch(['SET OBJECT CONFIGS', objectConfigs]); 
-            dispatch(['SET COLOR PALETTES', palettes]); 
+            readConfigFromLocalStoreToState(); 
+            readColorsFromLocalStoreToState(); 
             setCompleteFirstDispatch(true); 
         }
         
@@ -50,8 +61,8 @@ function LocalDatabase(props) {
     useEffect(() => {
 
         if (completeFirstWrite && completeFirstDispatch) {
-            localStorage.setItem(configKey, JSON.stringify(objectConfigs)); 
-            localStorage.setItem(colorsKey, JSON.stringify(colorPalettes)); 
+            writeConfigFromStateToLocalStore(); 
+            writeColorsFromStateToLocalStore(); 
         }
 
     }, [colorPalettes, objectConfigs, completeFirstWrite, completeFirstDispatch]); 
