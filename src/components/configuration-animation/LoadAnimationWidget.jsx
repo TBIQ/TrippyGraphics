@@ -9,7 +9,7 @@ function LoadAnimationWidget(props) {
     const { animations } = state; 
     const ids = Object.keys(animations); 
     const loadAnimation = id => {
-        dispatch(['SET CURRENT ANIMATION', { animation: animations[id] }]); 
+        dispatch(['SET CURRENT ANIMATION', id]); 
     }
 
     return <LoadListWidget 

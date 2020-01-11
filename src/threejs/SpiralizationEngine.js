@@ -1,6 +1,6 @@
 import * as THREE from "three"; 
+import createjs from "createjs"; 
 import _ from "lodash";
-import createjs from "createjs";
 import objectConfigs from "./SpiralizationEngineConfigurations"; 
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
@@ -39,9 +39,8 @@ class SpiralizationEngine {
   }
 
   async interpolateUsingChain(chain) {
-    chain.run(); 
+    chain.run(this.objectModel); 
   }
-
 
   start() {
     /*
@@ -50,7 +49,6 @@ class SpiralizationEngine {
 
     this.animate = (time) => {
         this.id = requestAnimationFrame( this.animate );
-        createjs.Tween.tick(); 
         this.objectModel.update(); 
         this.cameraModel.update(); 
         this.objectModel.clearScene(); 

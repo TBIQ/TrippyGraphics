@@ -8,23 +8,20 @@ import "../../css/EditAnimationWidget.css";
 const { TreeNode } = Tree; 
 const { Option } = Select; 
 const defaultAnimationDuration = 2000; 
-const defaultGroupType = 'full'; 
 
 function EditAnimationWidget(props) {
 
     const { dispatch, state } = useRootContext(); 
-    const { engines, objectConfigs } = state; 
+    const { engines, objectConfigs, chain } = state; 
     const engine = engines['animation']; 
     const { objectModel } = engine; 
     const [update, setUpdate] = useState(0); 
-    const [chain, setChain] = useState(new AnimationChain([])); 
     const chainUpdate = () => {
          setUpdate((update+1)%3);
     }; 
     const [activeObjectConfig, setActiveObjectConfig] = useState(false); 
-    const [activeAnimationDuration, setActiveAnimationDuration] = useState(false); 
+    const [activeAnimationDuration, setActiveAnimationDuration] = useState(defaultAnimationDuration); 
     const [modalOpen, setModalOpen] = useState(false); 
-    const [checkedList, setCheckedList] = useState([]); 
 
     const handlers = {
 
@@ -36,18 +33,12 @@ function EditAnimationWidget(props) {
         // submit the pending animation to the existig chain 
         'add to chain': () => {
             // add the new animation to the chain 
-            let newAnimation = new Animation(objectModel, 
-                                             objectConfigs[activeObjectConfig], 
-                                             activeAnimationDuration); 
-            newAnimation.setName(activeObjectConfig); 
-            chain.add(new AnimationGroup([newAnimation])); 
+            chain.add(new Animation(activeObjectConfig, 
+                                    objectConfigs[activeObjectConfig], 
+                                    activeAnimationDuration)); 
             chainUpdate(); 
             // hide the modal 
             setModalOpen(false); 
-            // animation is enabled by default 
-            let newCheckedList = _.clone(checkedList); 
-            newCheckedList.push(true); 
-            setCheckedList(newCheckedList); 
         }, 
 
         // cancel the pending animation of a link to the animation chain 
@@ -67,20 +58,14 @@ function EditAnimationWidget(props) {
 
         // run the currently defined set of animations one after the other 
         'run animation chain': () => {
-            let runChain = new AnimationChain([]);
-            for (let i = 0; i < checkedList.length; i++) {
-                if (checkedList[i]) {
-                    runChain.add(chain.getGroupAtIndex(i)); 
-                }
-            } 
-            engine.interpolateUsingChain(runChain); 
+            engine.interpolateUsingChain(chain); 
         }, 
 
         // enable / disable an animation in the chain 
         'check animation': (i) => {
-            let newCheckedList = _.clone(checkedList); 
-            newCheckedList[i] = !newCheckedList[i]; 
-            setCheckedList(newCheckedList);  
+            let ani = chain.getAnimationAtIndex(i); 
+            ani.setEnabled(!ani.getEnabled()); 
+            chainUpdate(); 
         }
     }; 
 
@@ -119,7 +104,7 @@ function EditAnimationWidget(props) {
                     min={100} 
                     max={20000} 
                     step={100}
-                    defaultValue={defaultAnimationDuration} 
+                    value={activeAnimationDuration} 
                     onChange={handlers['set duration']} />
                 </Col>
             </Row>
@@ -130,16 +115,18 @@ function EditAnimationWidget(props) {
 
         let options = [];  
         let i = 0; 
-        for (let group of chain.iter()) {
-            for (let ani of group.iter()) {
-                let title = `${ani.getName()} - duration: ${ani.getDuration()} msecs`;
-                options.push(
-                    <Checkbox
-                    checked={checkedList[i]}
-                    onChange={_.partial(handlers['check animation'], i)}
-                    >{title}</Checkbox>
-                ); 
-            } 
+        for (let ani of chain.iter()) {
+            let title = `${ani.getName()} - duration: ${ani.getDuration()} msecs`;
+            options.push(
+                <Row>
+                    <Col>
+                        <Checkbox
+                        checked={chain.getAnimationAtIndex(i).getEnabled()}
+                        onChange={_.partial(handlers['check animation'], i)}
+                        >{title}</Checkbox>
+                    </Col>
+                </Row>
+            ); 
             i += 1; 
         }
         return options; 
@@ -148,10 +135,11 @@ function EditAnimationWidget(props) {
 
     return (
         <React.Fragment>
-            <Button onClick={handlers['run animation chain']}>{"Run Animation Chain"}</Button>
-            <Button onClick={handlers['open modal']}>{"Add Animation"}</Button>
-            <Divider/>
-            {buildChain()}
+            <Button onClick={handlers['run animation chain']}>{"Run"}</Button>
+            <Button onClick={handlers['open modal']}>{"Add"}</Button>
+            <div style={{ marginTop: 5 }}>
+                {buildChain()}
+            </div>
             {addAnimationModal}
         </React.Fragment>
     ); 

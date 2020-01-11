@@ -285,7 +285,7 @@ class ObjectModel {
 
                     if (!singletonPlaneGeometry) {
 
-                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 10, 10 ); 
+                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 14, 14 ); 
 
                         instancedPlaneGeometry.addAttribute('uv',       singletonPlaneGeometry.attributes.uv); 
                         instancedPlaneGeometry.addAttribute('normal',   singletonPlaneGeometry.attributes.normal); 

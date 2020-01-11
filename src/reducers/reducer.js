@@ -1,25 +1,26 @@
 import _ from "lodash";  
+import { AnimationChain } from "../threejs/Animation"; 
 
 export const reducerInitialState = {
 
-    layoutMode: 'split',        // can either be 'split' or 'full' 
-    singleViewMode: 'static',   // can either be 'static' or 'animation' 
-    splitViewOrder: 'static',   // can either be 'static' or 'animation' 
+    layoutMode: 'split',            // can either be 'split' or 'full' 
+    singleViewMode: 'static',       // can either be 'static' or 'animation' 
+    splitViewOrder: 'static',       // can either be 'static' or 'animation' 
 
-    staticObjectConfig: null,   // current object state defined in configuration menu 
-    staticCameraConfig: null,   // current camera state defined in configuration menu 
-    currentAnimation: null,     // current animation state defined in configuration menu 
+    staticObjectConfig: null,       // current object state defined in configuration menu 
+    staticCameraConfig: null,       // current camera state defined in configuration menu 
+    chain: new AnimationChain([]),  // current animation chain defined in configuration menu 
 
-    pendingColorPalette: null,  // current color palette value in configuration men\u (not necessarily applied to static engine)
+    pendingColorPalette: null,      // current color palette value in configuration men\u (not necessarily applied to static engine)
 
-    engines: {},                // map of id to an engine   
-    engineObjectConfigs: {},    // map of id to an object config that should be applied to an engine
-    engineCameraConfigs: {},    // map of id to an camera config that should be applied to an engine
+    engines: {},                    // map of id to an engine   
+    engineObjectConfigs: {},        // map of id to an object config that should be applied to an engine
+    engineCameraConfigs: {},        // map of id to an camera config that should be applied to an engine
 
     // these objects are stored in the in-browser database 
-    colorPalettes: {},          // map of color palette name to list of colors 
-    objectConfigs: {},          // map of id to a saved configuration 
-    animations: {},             // map of id to animation definition 
+    colorPalettes: {},              // map of color palette name to list of colors 
+    objectConfigs: {},              // map of id to a saved configuration 
+    animations: {},                 // map of id to animation definition 
     
 };
 
@@ -88,20 +89,24 @@ export function reducer(state, [type, payload]) {
             return { ...state, objectConfigs }; 
         }, 
 
+        'SET PENDING COLOR PALETTE': () => {
+            return { ...state, pendingColorPalette: payload }; 
+        }, 
+
+        'SET ANIMATIONS': () => {
+            return { ...state, animations: payload }; 
+        },  
+
         'SAVE ANIMATION': () => {
-            let animations = _.clone(state.animations); 
-            animations[payload] = state.currentAnimation; 
-            return { ...state, animations }; 
+            let animations = _.clone(state.animations);
+            animations[payload] = AnimationChain.copy(state.chain);
+            return { ...state, animations };
         }, 
 
         'SET CURRENT ANIMATION': () => {
-            let currentAnimation = payload.animation; 
-            return { ...state, currentAnimation }; 
-        }, 
-
-        'SET PENDING COLOR PALETTE': () => {
-            return { ...state, pendingColorPalette: payload }; 
+            return { ...state, chain: AnimationChain.copy(state.animations[payload]) }; 
         }
+
 
     }; 
 

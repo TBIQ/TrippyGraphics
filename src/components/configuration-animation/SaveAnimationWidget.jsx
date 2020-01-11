@@ -6,15 +6,14 @@ function SaveAnimationWidget(props) {
 
     const SaveByNameForm = SaveByNameFormFactory('form-animation-config'); 
     const { dispatch } = useRootContext(); 
-    const saveConfiguration = (name) => {
-        dispatch(['SAVE ANIMATION', name]); 
+    const saveAnimation = (id) => {
+        dispatch(['SAVE ANIMATION', id]); 
     }; 
 
     return (
         <SaveByNameForm 
         placeholder="Enter Name for Animation"
-        saveCallback={saveConfiguration}
-        />
+        saveCallback={saveAnimation}/>
     ); 
 
 }
