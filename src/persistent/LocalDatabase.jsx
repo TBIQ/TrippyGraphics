@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"; 
 import { useRootContext } from "../context/context"; 
 import { AnimationChain } from "../threejs/Animation"; 
+import { local } from "d3-selection";
 
 const { localStorage } = window; 
 const configKey = 'config'; 
@@ -50,6 +51,15 @@ function LocalDatabase(props) {
     // Write local values (JSON) to in memory database if this is first app load ever 
     useEffect(() => {
         if (enginesInitialized) {
+
+            const destroy = false; 
+            if (destroy) {
+                let keys = [configKey, colorsKey, animationKey]; 
+                for (let k of keys) {
+                    localStorage.removeItem(k);
+                }
+            }
+            
             // Initialize config data 
             let prevConfigs = localStorage.getItem(configKey); 
             if (!prevConfigs) {

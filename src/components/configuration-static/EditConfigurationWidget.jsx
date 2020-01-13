@@ -1,5 +1,6 @@
 import React from "react"; 
 import { Row, Col } from "antd"; 
+import _ from "lodash"; 
 import { useRootContext } from "../../context/context"; 
 import ObjectModel from "../../threejs/ObjectModel"; 
 import CameraModel from "../../threejs/CameraModel"; 
@@ -11,8 +12,12 @@ function EditConfigurationWidget(props) {
 
     const { state, dispatch } = useRootContext(); 
     const { staticObjectConfig, staticCameraConfig } = state; 
+    const numericProperties = _.union(
+        ObjectModel.numericProperties, 
+        ObjectModel.shaderNumericProperties
+    ); 
 
-    const objectSliders = ObjectModel.numericProperties.map(({ field, min, max, step }) => 
+    const objectSliders = numericProperties.map(({ field, min, max, step }) => 
         <ParameterSliderWidget 
         name={field} 
         min={min} 
@@ -22,6 +27,18 @@ function EditConfigurationWidget(props) {
         onChange={(value) => {
             let config = {}; 
             config[field] = value; 
+            dispatch(['SET ENGINE CONFIG', { id: 'static', config }]); 
+        }}
+        />
+    ); 
+
+    const objectSwitches = ObjectModel.shaderBooleanProperties.map((field) => 
+        <ParameterSwitchWidget
+        name={field}
+        defaultChecked={staticObjectConfig[field]}
+        onChange={(checked) => {
+            let config = {}; 
+            config[field] = checked; 
             dispatch(['SET ENGINE CONFIG', { id: 'static', config }]); 
         }}
         />
@@ -75,6 +92,7 @@ function EditConfigurationWidget(props) {
 
                 <h3>Object Properties</h3>
                 {objectSliders}  
+                {objectSwitches}
 
                 <h3>Camera Animation Properties</h3>
                 {cameraAnimationSwitches} 

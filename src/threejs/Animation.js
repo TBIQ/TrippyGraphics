@@ -135,8 +135,7 @@ export class Animation {
        createjs.ColorPlugin.install();
 
        let endState = _.cloneDeep(this.endState); 
-       let numFillerColors = objectModel.shaderUniforms.colors.value.length - endState.colors.length; 
-       let numColors = ObjectModel.MAX_NUM_COLORS - numFillerColors; 
+       let numColors = endState.colors.length; 
 
        function* colorIdGen() { for (let i = 0; i < numColors; i++) yield `color-${i}`; }
 
@@ -150,6 +149,9 @@ export class Animation {
                    delete endState[k];
                }
            } 
+           else if (ObjectModel.shaderBooleanProperties.includes(k)) {
+               acc[k] = endState[k]; 
+           }
            else if (k === 'colors') {
                let colors = objectModel.shaderUniforms.colors.value.map(threeColor => `#${threeColor.getHexString()}`);
                let i = 0; 

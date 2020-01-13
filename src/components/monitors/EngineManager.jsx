@@ -9,9 +9,10 @@ function EngineManager(props) {
     const { state, dispatch } = useRootContext(); 
     const { engines, engineObjectConfigs, engineCameraConfigs } = state; 
     let objectNumericFields = ObjectModel.numericProperties.map(({ field }) => field);
-    let objectFields = _.union(objectNumericFields, ['colors']); 
-    let { shaderNumericProperties } = ObjectModel; 
-    let shaderProperties = _.union(shaderNumericProperties, ['colors']); 
+    let shaderNumericFields = ObjectModel.shaderNumericProperties.map(({ field }) => field); 
+    let { shaderBooleanProperties } = ObjectModel; 
+    let shaderProperties = _.union(shaderNumericFields, shaderBooleanProperties, ['colors']);
+    let objectFields = _.union(objectNumericFields, ['colors'], shaderProperties); 
     let cameraFields = Object.keys(CameraModel.defaultCameraState); 
     let cameraAnimationFields = _.union(
         CameraModel.animationBooleanProperties, 

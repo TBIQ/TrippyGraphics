@@ -7,7 +7,7 @@ import * as Stats from 'stats.js';
 
 class SpiralizationEngine {
 
-  constructor(container, id) {
+  constructor(container, id, performance=false) {
 
     this.id = id; 
 
@@ -25,9 +25,12 @@ class SpiralizationEngine {
     this.cameraModel = new CameraModel(camera); 
     this.objectModel = new ObjectModel(scene); 
 
-    // performance monitoring  
-    this.stats = new Stats();
-    container.appendChild( this.stats.dom );
+    // performance monitoring 
+    this.performance = performance;  
+    if (performance) {
+      this.stats = new Stats();
+      container.appendChild( this.stats.dom );
+    }
 
   }
 
@@ -46,14 +49,19 @@ class SpiralizationEngine {
 
   start() {
 
-    this.animate = (time) => {
-        this.stats.begin(); 
+    this.animate = ( time ) => {
+        if (this.performance) {
+          this.stats.begin(); 
+        }
         this.objectModel.update(); 
         this.cameraModel.update(); 
         this.objectModel.clearScene(); 
         this.objectModel.render(); 
         this.renderer.render( this.scene, this.camera );
-        this.stats.end(); 
+        if (this.performance) {
+          this.stats.end(); 
+        }
+        console.log(this.objectModel.shaderUniforms); 
         this.id = requestAnimationFrame( this.animate );
     }
 

@@ -4,19 +4,9 @@ import _ from "lodash";
 import { stringToThreeColor, BufferGeometryCentroidComputer } from "./util"; 
 import Circle from "./Circle"; 
 
-function makeColorsArray(colors, maxLength) {
-    let fullColors = new Array(); 
-    let filler = new THREE.Color( 0x000000 ); 
-    for (let i = 0; i < maxLength; i++) {
-        fullColors.push( i < colors.length ? colors[i] : filler ); 
-    }
-    return fullColors; 
-};
-
 class ObjectModel {
 
     static MAX_NUM_ANGULAR_STEPS    = 24; 
-    static MAX_NUM_COLORS           = 25; 
     static MAX_NUM_INSTANCES        = ObjectModel.MAX_NUM_ANGULAR_STEPS * 1000; 
     static HIDE_POS                 = new THREE.Vector3( -1000, -1000, -1000 );
 
@@ -68,7 +58,10 @@ class ObjectModel {
             min: 1, 
             max: 24, 
             step: 1
-        }, 
+        }
+    ]
+
+    static shaderNumericProperties = [
         {
             field: 'parabolicDistortion', 
             min: 0, 
@@ -83,9 +76,9 @@ class ObjectModel {
         }
     ]
 
-    static shaderNumericProperties = [
-        'parabolicDistortion', 
-        'speed'
+    static shaderBooleanProperties = [
+        'sinusoidX', 
+        'sinusoidY'
     ]
 
     // Default object model configuration
@@ -120,19 +113,16 @@ class ObjectModel {
             },
             "colors": {
                 'type': 'v3v', 
-                'value': makeColorsArray(
-                    palettes['material'].map(stringToThreeColor), 
-                    ObjectModel.MAX_NUM_COLORS
-                )
+                'value': palettes['material'].map(stringToThreeColor)
             }, 
             'parabolicDistortion': {
                 value: 0
             }, 
             'sinusoidX': {
-                value: false
+                value: true
             },
             'sinusoidY': {
-                value: false
+                value: true
             }, 
             'numcolors': {
                 'value': palettes['material'].length
@@ -149,34 +139,33 @@ class ObjectModel {
         this.scene = scene; 
 
         // Initialize model using its default state 
-        this.setToDefault(); 
+        this.applyConfig(ObjectModel.defaultState); 
 
         // Pre-initializes resource for THREE.js transforms that 
         // will need to be computed when rendering. Attaches these 
         // resources to a render function. 
         this.initializeRenderer(); 
 
-        this.dirty = true; 
     }
-
-    setToDefault() {
-        this.applyConfig(ObjectModel.defaultState); 
-    };
 
     applyConfig(config) {
         // apply all keys to self 
         let keys = Object.keys(config); 
+        let skips = [
+            'colors', 
+            'speed', 
+            'parabolicDistortion', 
+            'sinusoidX', 
+            'sinusoidY'
+        ]
         for (let k of keys) {
-            this[k] = config[k]; 
+            if (!skips.includes(k)) {
+                this[k] = config[k]; 
+            }
         }
         // update shader specific properties 
         if (keys.includes('colors')) {
-            this.shaderUniforms.colors.value = makeColorsArray(
-                config.colors.map(stringToThreeColor), 
-                ObjectModel.MAX_NUM_COLORS
-            ); 
-            this.shaderUniforms.numcolors.value = config.colors.length; 
-            console.log('updating color'); 
+            this.shaderUniforms.colors.value = config.colors.map(stringToThreeColor); 
         }
         if (keys.includes('speed')) {
             this.shaderUniforms.speed.value = config.speed; 
@@ -184,8 +173,12 @@ class ObjectModel {
         if (keys.includes('parabolicDistortion')) {
             this.shaderUniforms.parabolicDistortion.value = config.parabolicDistortion; 
         }
-        // indicate parameters have been updated so we need to re-render
-        this.dirty = true; 
+        if (keys.includes("sinusoidX")) {
+            this.shaderUniforms.sinusoidX.value = config.sinusoidX; 
+        }
+        if (keys.includes("sinusoidY")) {
+            this.shaderUniforms.sinusoidY.value = config.sinusoidY; 
+        }
     }
 
     get angularStep() {
@@ -213,7 +206,7 @@ class ObjectModel {
                 uniforms: this.shaderUniforms, 
                 side: THREE.DoubleSide,
                 defines: {
-                    'MAX_NUM_COLORS': 25 
+                    'MAX_NUM_COLORS': 16 
                 },
                 vertexShader, 
                 fragmentShader 
@@ -261,8 +254,6 @@ class ObjectModel {
         // render function has access to context that contains all resources used for computing and performing transforms 
         this.render = () => {
             
-            console.log('speed:', this.shaderUniforms.speed.value, ' time: ', this.shaderUniforms.time.value); 
-
             clearAttributes(); 
 
             // 3 conical slices 
