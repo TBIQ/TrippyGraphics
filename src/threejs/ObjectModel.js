@@ -8,18 +8,17 @@ function makeColorsArray(colors, maxLength) {
     let fullColors = new Array(); 
     let filler = new THREE.Color( 0x000000 ); 
     for (let i = 0; i < maxLength; i++) {
-        fullColors.push(i < colors.length ? colors[i] : filler); 
+        fullColors.push( i < colors.length ? colors[i] : filler ); 
     }
     return fullColors; 
-}
-
+};
 
 class ObjectModel {
 
     static MAX_NUM_ANGULAR_STEPS    = 24; 
     static MAX_NUM_COLORS           = 25; 
     static MAX_NUM_INSTANCES        = ObjectModel.MAX_NUM_ANGULAR_STEPS * 1000; 
-    static HIDE_POS                 = new THREE.Vector3(-1000,-1000,-1000);
+    static HIDE_POS                 = new THREE.Vector3( -1000, -1000, -1000 );
 
     static numericProperties = [
         {
@@ -157,6 +156,7 @@ class ObjectModel {
         // resources to a render function. 
         this.initializeRenderer(); 
 
+        this.dirty = true; 
     }
 
     setToDefault() {
@@ -176,6 +176,7 @@ class ObjectModel {
                 ObjectModel.MAX_NUM_COLORS
             ); 
             this.shaderUniforms.numcolors.value = config.colors.length; 
+            console.log('updating color'); 
         }
         if (keys.includes('speed')) {
             this.shaderUniforms.speed.value = config.speed; 
@@ -183,6 +184,8 @@ class ObjectModel {
         if (keys.includes('parabolicDistortion')) {
             this.shaderUniforms.parabolicDistortion.value = config.parabolicDistortion; 
         }
+        // indicate parameters have been updated so we need to re-render
+        this.dirty = true; 
     }
 
     get angularStep() {
@@ -205,7 +208,7 @@ class ObjectModel {
         let vertexShader = document.getElementById('raw-instanced-vertex-shader').textContent; 
         let fragmentShader = document.getElementById('fragment-shader-cycling-discrete-gradient').textContent;  
 
-        let rawMaterial = (
+        this.rawMaterial = (
             new THREE.RawShaderMaterial({ 
                 uniforms: this.shaderUniforms, 
                 side: THREE.DoubleSide,
@@ -218,8 +221,8 @@ class ObjectModel {
         ).clone();
 
         // Ensure the uniforms are unique across instances of ObjectModels 
-        rawMaterial.uniforms = THREE.UniformsUtils.clone( this.shaderUniforms );
-        this.shaderUniforms = rawMaterial.uniforms; 
+        this.rawMaterial.uniforms = THREE.UniformsUtils.clone( this.shaderUniforms );
+        this.shaderUniforms = this.rawMaterial.uniforms; 
 
         let initPos = new THREE.Vector3( 0, 0, 0 ); 
         let nPos = new THREE.Vector3(); 
@@ -258,6 +261,8 @@ class ObjectModel {
         // render function has access to context that contains all resources used for computing and performing transforms 
         this.render = () => {
             
+            console.log('speed:', this.shaderUniforms.speed.value, ' time: ', this.shaderUniforms.time.value); 
+
             clearAttributes(); 
 
             // 3 conical slices 
@@ -285,7 +290,7 @@ class ObjectModel {
 
                     if (!singletonPlaneGeometry) {
 
-                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 14, 14 ); 
+                        singletonPlaneGeometry = new THREE.PlaneBufferGeometry( planeWidth, this.planeHeight, 10, 10 ); 
 
                         instancedPlaneGeometry.addAttribute('uv',       singletonPlaneGeometry.attributes.uv); 
                         instancedPlaneGeometry.addAttribute('normal',   singletonPlaneGeometry.attributes.normal); 
@@ -381,16 +386,16 @@ class ObjectModel {
                 offsetAttribute.needsUpdate = true; 
                 orientationAttribute.needsUpdate = true; 
 
-                let mesh = new THREE.Mesh( instancedPlaneGeometry, rawMaterial ); 
-
+                let mesh = new THREE.Mesh( instancedPlaneGeometry, this.rawMaterial ); 
                 mesh.frustumCulled = false; 
-
                 this.scene.add( mesh ); 
 
             }
 
             computeTransforms();
             renderPlanes(); 
+
+            this.dirty = false; 
 
         } 
 

@@ -1,11 +1,9 @@
 import * as THREE from "three"; 
-import createjs from "createjs"; 
 import _ from "lodash";
-import objectConfigs from "./SpiralizationEngineConfigurations"; 
 import { threejsSetupBasics } from "./util"; 
 import CameraModel from "./CameraModel"; 
 import ObjectModel from "./ObjectModel"; 
-import { Animation, AnimationGroup, AnimationChain } from "./Animation"; 
+import * as Stats from 'stats.js';
 
 class SpiralizationEngine {
 
@@ -27,6 +25,10 @@ class SpiralizationEngine {
     this.cameraModel = new CameraModel(camera); 
     this.objectModel = new ObjectModel(scene); 
 
+    // performance monitoring  
+    this.stats = new Stats();
+    container.appendChild( this.stats.dom );
+
   }
 
   resize(width, height) {
@@ -43,17 +45,16 @@ class SpiralizationEngine {
   }
 
   start() {
-    /*
-    Starts render loop 
-    */ 
 
     this.animate = (time) => {
-        this.id = requestAnimationFrame( this.animate );
+        this.stats.begin(); 
         this.objectModel.update(); 
         this.cameraModel.update(); 
         this.objectModel.clearScene(); 
         this.objectModel.render(); 
         this.renderer.render( this.scene, this.camera );
+        this.stats.end(); 
+        this.id = requestAnimationFrame( this.animate );
     }
 
     this.animate(); 

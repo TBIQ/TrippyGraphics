@@ -73,7 +73,7 @@ export class Animation {
                 duration, 
                 enabled=true, 
                 delay=0, 
-                easing=createjs.Ease.circInOut) {
+                easing=createjs.Ease.linear) {
 
         this.name           = name; 
         this.endState       = endState; 
@@ -86,13 +86,20 @@ export class Animation {
 
     }
 
+
     static serialize(instance) {
+        /*
+        Serialize an instance of this class 
+        */
         let { name, endState, duration, enabled, delay } = instance; 
         let serialized = JSON.stringify({ name, endState, duration, enabled, delay });
         return serialized;  
     }
 
     static deserialize(str) {
+        /*
+        Deserialize an instance of this class 
+        */
         let { name, endState, duration, enabled, delay } = JSON.parse(str); 
         let instance = new Animation(name, endState, duration, enabled, delay);
         return instance;  
@@ -137,7 +144,11 @@ export class Animation {
        // only updates keys corresponding to object model 
        let updateState = Object.keys(endState).reduce((acc,k) => {
            if (ObjectModel.keys.includes(k)) {
-               acc[k] = objectModel[k]; 
+               if (endState[k] !== objectModel[k]) {
+                    acc[k] = objectModel[k]; 
+               } else {
+                   delete endState[k];
+               }
            } 
            else if (k === 'colors') {
                let colors = objectModel.shaderUniforms.colors.value.map(threeColor => `#${threeColor.getHexString()}`);
@@ -148,23 +159,22 @@ export class Animation {
                    i += 1; 
                }
                delete endState.colors; 
-           } 
+           } else {
+               delete endState[k]; 
+           }
            return acc; 
        }, {}); 
 
        return new Promise((resolve, reject) => {
 
-           let onChange = (e) => {          
+           let onChange = (e) => {    
                let config = _.cloneDeep(updateState); 
                config.colors = [];
                for (let id of colorIdGen()) {
                    config.colors.push(config[id]); 
                    delete config[id]; 
                }
-               objectModel.applyConfig(config); 
-               objectModel.update(); 
-               objectModel.clearScene(); 
-               objectModel.render(); 
+               objectModel.applyConfig(config);  
            }; 
            let onComplete = () => {
                resolve(); 
