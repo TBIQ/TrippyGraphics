@@ -27,7 +27,7 @@
     "react-use-dimensions": "^1.2.1",
     "reactcss": "^1.2.3",
     "stats.js": "^0.17.0",
-    "three": "^0.107.0"
+    "three": "^0.125.0"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.1.1",
